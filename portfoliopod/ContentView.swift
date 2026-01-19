@@ -2,20 +2,15 @@
 //  ContentView.swift
 //  portfoliopod
 //
-//  Created by Anurag Singh on 18/01/26.
+//  Main content view - iPod device
 //
 
 import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
-        .padding()
+        DeviceShellView()
+            .ignoresSafeArea()
     }
 }
 
