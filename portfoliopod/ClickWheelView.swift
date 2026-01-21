@@ -8,164 +8,120 @@
 import SwiftUI
 
 struct ClickWheelView: View {
-  let numberOfItems: Int
-  let onSelectionChange: (Int) -> Void
+  @ObservedObject var physics: ClickWheelPhysics  // Accept injected physics
   let onCenterPress: () -> Void
   let onMenuPress: () -> Void
 
-  @StateObject private var physics: ClickWheelPhysics
-  @State private var dragLocation: CGPoint = .zero
   @State private var isDragging: Bool = false
-
-  init(
-    numberOfItems: Int, onSelectionChange: @escaping (Int) -> Void,
-    onCenterPress: @escaping () -> Void, onMenuPress: @escaping () -> Void
-  ) {
-    self.numberOfItems = numberOfItems
-    self.onSelectionChange = onSelectionChange
-    self.onCenterPress = onCenterPress
-    self.onMenuPress = onMenuPress
-    _physics = StateObject(wrappedValue: ClickWheelPhysics(numberOfItems: numberOfItems))
-  }
 
   var body: some View {
     GeometryReader { geometry in
-      let center = CGPoint(x: geometry.size.width / 2, y: geometry.size.height / 2)
       let radius = min(geometry.size.width, geometry.size.height) / 2
+      let innerRadius = radius * 0.42
 
       ZStack {
-        // Outer wheel body (concave ring effect)
+        // Outer wheel body (Black Click Wheel)
         Circle()
           .fill(
-            RadialGradient(
-              colors: [
-                Color(white: 0.15),
-                Color(white: 0.12),
-                Color(white: 0.15),
-              ],
-              center: .center,
-              startRadius: radius * 0.4,
-              endRadius: radius
+            LinearGradient(
+              colors: [Color(white: 0.18), Color(white: 0.12)],
+              startPoint: .topLeading,
+              endPoint: .bottomTrailing
             )
           )
-          .overlay(
-            Circle()
-              .strokeBorder(
-                LinearGradient(
-                  colors: [Color.white.opacity(0.1), Color.clear, Color.black.opacity(0.2)],
-                  startPoint: .topLeading,
-                  endPoint: .bottomTrailing
-                ),
-                lineWidth: 1
-              )
-          )
-          .frame(width: radius * 2, height: radius * 2)
 
-        // Concave depth illusion
+        // Label Areas (Cardinal icons - white on black)
+        Group {
+          Image(systemName: "square.grid.2x2.fill")
+            .font(.system(size: 12, weight: .bold))
+            .foregroundColor(Color.white.opacity(0.7))
+            .offset(y: -radius * 0.72)
+
+          Image(systemName: "playpause.fill")
+            .font(.system(size: 14))
+            .foregroundColor(Color.white.opacity(0.7))
+            .offset(y: radius * 0.72)
+
+          Image(systemName: "forward.end.fill")
+            .font(.system(size: 14))
+            .foregroundColor(Color.white.opacity(0.7))
+            .offset(x: radius * 0.72)
+
+          Image(systemName: "backward.end.fill")
+            .font(.system(size: 14))
+            .foregroundColor(Color.white.opacity(0.7))
+            .offset(x: -radius * 0.72)
+        }
+        .allowsHitTesting(false)
+
+        // Center button (Dark gray matching wheel)
         Circle()
-          .stroke(
+          .fill(
             LinearGradient(
-              colors: [Color.black.opacity(0.4), Color.white.opacity(0.1)],
-              startPoint: .top,
-              endPoint: .bottom
-            ),
-            lineWidth: 4
+              colors: [Color(white: 0.25), Color(white: 0.18)],
+              startPoint: .topLeading,
+              endPoint: .bottomTrailing
+            )
           )
-          .padding(2)
-          .blur(radius: 2)
-          .opacity(0.5)
+          .frame(width: innerRadius * 2, height: innerRadius * 2)
+          .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
 
-        // Label Areas (Modern restraint: No icons, just clean interaction surface)
+        // Unified Gesture Layer
+        GeometryReader { gestureGeo in
+          Color.clear
+            .contentShape(Circle())
+            .gesture(
+              DragGesture(minimumDistance: 0)
+                .onChanged { value in
+                  let dx = value.location.x - (gestureGeo.size.width / 2)
+                  let dy = value.location.y - (gestureGeo.size.height / 2)
+                  let dist = sqrt(dx * dx + dy * dy)
 
-        // Center button (raised 1-2px effect)
-        Button(action: {
-          physics.centerButtonPress()
-          onCenterPress()
-        }) {
-          ZStack {
-            Circle()
-              .fill(
-                LinearGradient(
-                  colors: [
-                    Color(white: 0.2),
-                    Color(white: 0.18),
-                  ],
-                  startPoint: .topLeading,
-                  endPoint: .bottomTrailing
-                )
-              )
-              .frame(width: radius * 0.45, height: radius * 0.45)
-              .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
+                  if dist > innerRadius && dist < radius {
+                    if !isDragging {
+                      isDragging = true
+                      physics.startDrag(
+                        at: value.location,
+                        center: CGPoint(x: gestureGeo.size.width / 2, y: gestureGeo.size.height / 2)
+                      )
+                    } else {
+                      physics.updateDrag(
+                        at: value.location,
+                        center: CGPoint(x: gestureGeo.size.width / 2, y: gestureGeo.size.height / 2)
+                      )
+                    }
+                  }
+                }
+                .onEnded { value in
+                  let dx = value.location.x - (gestureGeo.size.width / 2)
+                  let dy = value.location.y - (gestureGeo.size.height / 2)
+                  let dist = sqrt(dx * dx + dy * dy)
+                  let moveDist = sqrt(
+                    value.translation.width * value.translation.width + value.translation.height
+                      * value.translation.height)
 
-            // Subtle rim highlight for the "raised" look
-            Circle()
-              .strokeBorder(
-                LinearGradient(
-                  colors: [.white.opacity(0.15), .clear],
-                  startPoint: .topLeading,
-                  endPoint: .bottomTrailing
-                ),
-                lineWidth: 1
-              )
-              .frame(width: radius * 0.45, height: radius * 0.45)
-          }
-        }
-        .buttonStyle(PlainButtonStyle())
-      }
-      .contentShape(Circle())
-      .gesture(
-        DragGesture(minimumDistance: 0)
-          .onChanged { value in
-            let distanceFromCenter = sqrt(
-              pow(value.location.x - center.x, 2) + pow(value.location.y - center.y, 2))
-            let centerButtonRadius = radius * 0.225
+                  // TAP DETECTION
+                  if moveDist < 15 && dist < innerRadius {
+                    print("ClickWheelView: [CENTER TAP DETECTED]")
+                    physics.centerButtonPress()
+                    onCenterPress()
+                  } else if moveDist < 15 && dist > innerRadius && dist < radius {
+                    let angle = atan2(dy, dx) + .pi / 2
+                    let normalizedAngle = angle < 0 ? angle + 2 * .pi : angle
 
-            // Only handle wheel drag if outside center button
-            if distanceFromCenter > centerButtonRadius {
-              if !isDragging {
-                isDragging = true
-                physics.startDrag(at: value.location, center: center)
-              } else {
-                physics.updateDrag(at: value.location, center: center)
-              }
-              dragLocation = value.location
-            }
-          }
-          .onEnded { _ in
-            isDragging = false
-            physics.endDrag()
-          }
-      )
-      .simultaneousGesture(
-        TapGesture()
-          .onEnded { _ in
-            // Menu button tap (top area of the ring)
-            let tapLocation = dragLocation
-            let dx = tapLocation.x - center.x
-            let dy = tapLocation.y - center.y
-            let angle = atan2(dy, dx)  // -pi to pi
+                    if normalizedAngle > 5.5 || normalizedAngle < 0.7 {
+                      onMenuPress()
+                    }
+                  }
 
-            let distanceFromCenter = sqrt(dx * dx + dy * dy)
-            let innerRadius = radius * 0.225
-
-            // If tap is in the top quadrant and on the ring
-            if distanceFromCenter > innerRadius && distanceFromCenter < radius {
-              // Normalized angle for "up": around -pi/2
-              if angle > -2.3 && angle < -0.8 {
-                onMenuPress()
-              }
-            }
-          }
-      )
-      .onChange(of: physics.selectionIndex) { newIndex in
-        onSelectionChange(newIndex)
-      }
-      .onChange(of: numberOfItems) { newCount in
-        // Reset physics when number of items changes
-        if physics.numberOfItems != newCount {
-          physics.numberOfItems = newCount
+                  isDragging = false
+                  physics.endDrag()
+                }
+            )
         }
       }
+      .frame(width: radius * 2, height: radius * 2)
+      .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
     }
   }
 }

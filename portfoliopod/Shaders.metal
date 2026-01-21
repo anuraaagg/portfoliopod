@@ -25,77 +25,110 @@ vertex VertexOut vertex_main(VertexIn in [[stage_in]]) {
     return out;
 }
 
-// Simple hash function for noise
-float hash(float2 p) {
-    return fract(sin(dot(p, float2(127.1, 311.7))) * 43758.5453);
+// -----------------------------------------------------------------------------
+// Helper Functions for PBR-lite
+// -----------------------------------------------------------------------------
+
+// Better hash for high-frequency noise
+float hash21(float2 p) {
+    p = fract(p * float2(234.34, 435.345));
+    p += dot(p, p + 34.23);
+    return fract(p.x * p.y);
 }
 
-// 2D noise function
-float noise(float2 p) {
-    float2 i = floor(p);
-    float2 f = fract(p);
-    f = f * f * (3.0 - 2.0 * f);
-    
-    float a = hash(i);
-    float b = hash(i + float2(1.0, 0.0));
-    float c = hash(i + float2(0.0, 1.0));
-    float d = hash(i + float2(1.0, 1.0));
-    
-    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+// Micro-grain noise (High Frequency - Bead Blasted)
+float microGrain(float2 uv, float strength) {
+    float n = hash21(uv * 4000.0); // Very high frequency for bead-blast
+    return (n - 0.5) * strength;
 }
 
-// Vertical grain noise
-float grain(float2 uv, float scale) {
-    float grainValue = noise(uv * scale);
-    // Make it more vertical/directional
-    grainValue = abs(grainValue - 0.5) * 2.0;
-    return grainValue;
+// Fresnel Schlick approximation
+float fresnel(float cosTheta, float F0) {
+    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
 }
 
-// Edge vignette
-float vignette(float2 uv, float amount) {
-    float2 center = float2(0.5, 0.5);
-    float dist = distance(uv, center);
-    return 1.0 - smoothstep(0.3, 0.7, dist) * amount;
-}
+// -----------------------------------------------------------------------------
+// Fragment Shader
+// -----------------------------------------------------------------------------
 
 fragment float4 fragment_main(VertexOut in [[stage_in]],
                                constant float2 &resolution [[buffer(0)]],
                                constant float &time [[buffer(1)]],
                                constant float &lightAngle [[buffer(2)]],
-                               constant float &roughness [[buffer(3)]],
+                               constant float &roughness [[buffer(3)]], // Unused, hardcoded for consistency
                                constant float &grainScale [[buffer(4)]],
                                constant float &vignetteAmount [[buffer(5)]]) {
     float2 uv = in.texCoord;
     
-    // Base aluminum color (modern matte gray/silver)
-    float3 baseColor = float3(0.85, 0.85, 0.88);
+    // -------------------------------------------------------------------------
+    // 1. Material Properties (Classic 6th Gen Matte Aluminum)
+    // -------------------------------------------------------------------------
+    // Darker slate/blue-gray base color (matches modern "Space Gray" or "Slate")
+    float3 albedo = float3(0.24, 0.28, 0.33); 
+    float metalRoughness = 0.65; // High roughness for matte finish
+    float F0 = 0.04; // Dielectric/Metal mix (aluminum has high F0 but painted/anodized is complex)
     
-    // Vertical Grain Architecture
-    // We use a high-frequency noise stretched vertically
-    float2 grainUV = uv * float2(500.0, 5.0); // Extreme horizontal stretch for vertical grain
-    float grainValue = noise(grainUV);
+    // -------------------------------------------------------------------------
+    // 2. Micro-Surface Detail (Bead-Blasted Grain)
+    // -------------------------------------------------------------------------
+    // Add ultra-fine noise to albedo and normals
+    float grain = microGrain(uv, 0.08);
+    albedo += grain; 
     
-    // Anisotropic Modulation
-    // Simulate how light stretches across the surface
-    float anisotropic = pow(abs(sin(uv.x * 3.14159 + lightAngle)), 2.0) * 0.05;
+    // -------------------------------------------------------------------------
+    // 3. PBR-lite Lighting Environment
+    // -------------------------------------------------------------------------
+    // We simulate a lighting environment that rotates with the gyro (lightAngle)
     
-    // Grain intensity ≤ 3%
-    float grainIntensity = (grainValue - 0.5) * 0.03;
+    // Surface Normal (approx flat for 2D, but with subtle curvature implied)
+    float3 N = normalize(float3(0.0, 0.0, 1.0));
     
-    // Combine base, grain, and anisotropic lighting
-    float3 color = baseColor + grainIntensity + float3(anisotropic);
+    // Light Direction (Dynamic based on gyro)
+    // Simulate a main soft light source moving horizontally
+    // lightAngle is roughly tilt in X axis. width/height not available but UV is 0-1.
+    float3 L = normalize(float3(sin(lightAngle), 0.2, 1.0)); // Z=1 keeps it somewhat front-facing
     
-    // Edge Vignette (Simulating ambient occlusion and material depth)
+    // View Direction (Camera is looking -Z)
+    float3 V = float3(0.0, 0.0, 1.0);
+    
+    // Half Vector
+    float3 H = normalize(L + V);
+    
+    // Dot products
+    float NdotL = max(dot(N, L), 0.0);
+    float NdotH = max(dot(N, H), 0.0);
+    float NdotV = max(dot(N, V), 0.0);
+    
+    // Diffuse Term (Simplified Lambert for matte)
+    // We wrap it slightly to simulate subsurface scattering/softness of anodizing
+    float diffuse = (NdotL * 0.5 + 0.5); 
+    
+    // Specular Term (Blinn-Phong approximation for rough surface)
+    float specPower = (1.0 - metalRoughness) * 20.0; // Low power for matte
+    float specular = pow(NdotH, specPower) * 0.15; // Low intensity
+    
+    // Fresnel (Edges get lighter)
+    // float edgeFresnel = fresnel(NdotV, F0); // Not used heavily in PBR-lite here for base metal
+    
+    // -------------------------------------------------------------------------
+    // 4. Composition
+    // -------------------------------------------------------------------------
+    
+    float3 finalColor = albedo * diffuse + float3(specular);
+    
+    // Add subtle ambient gradient (Top lighter, bottom darker)
+    finalColor *= (1.05 - uv.y * 0.1);
+    
+    // Edge darkening (Vignette) for curvature
     float2 centeredUV = uv * 2.0 - 1.0;
-    float vign = 1.0 - dot(centeredUV, centeredUV) * vignetteAmount;
-    color *= vign;
+    float dist = dot(centeredUV, centeredUV);
+    float rim = smoothstep(0.7, 1.4, dist);
+    finalColor *= (1.0 - rim * 0.6); // Darken edges
     
-    // Soft lighting falloff (slight vertical gradient)
-    color *= (1.0 - uv.y * 0.05);
-    
-    // Gamma correction for material realism
-    color = pow(max(color, 0.0), float3(1.0 / 2.2));
-    
-    return float4(color, 1.0);
+    // Add a subtle "rim light" catch on the very edge
+    float edgeCatch = smoothstep(0.95, 1.0, dist) * smoothstep(1.05, 1.0, dist);
+    finalColor += float3(0.2) * edgeCatch; // Slight metallic glint on edge curve
+
+    // Gamma correction
+    return float4(pow(finalColor, float3(1.0/2.2)), 1.0);
 }

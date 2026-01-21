@@ -25,11 +25,16 @@ class ClickWheelPhysics: ObservableObject {
   // Interaction state
   @Published var isDragging: Bool = false
   @Published var lastDragAngle: Double = 0
+  @Published var rotationBuffer: Double = 0  // Accumulated relative rotation
+
   @Published var numberOfItems: Int {
     didSet {
       updateTickAngle()
     }
   }
+
+  // Configuration for "stepped" feel
+  let degreesPerStep: Double = 60.0  // Significantly slower (more degrees needed per item change)
 
   var tickAngle: Double {
     return (2.0 * .pi) / Double(max(numberOfItems, 1))
@@ -39,6 +44,7 @@ class ClickWheelPhysics: ObservableObject {
   private var lastUpdateTime: CFTimeInterval = 0
 
   init(numberOfItems: Int) {
+    print("ClickWheelPhysics: Initializing with \(numberOfItems) items...")
     self.numberOfItems = numberOfItems
     startAnimationLoop()
   }
@@ -48,6 +54,7 @@ class ClickWheelPhysics: ObservableObject {
     selectionIndex = 0
     currentAngle = 0
     angularMomentum = 0
+    rotationBuffer = 0
   }
 
   deinit {
@@ -55,6 +62,7 @@ class ClickWheelPhysics: ObservableObject {
   }
 
   func startAnimationLoop() {
+    print("ClickWheelPhysics: Starting animation loop...")
     displayLink = CADisplayLink(target: self, selector: #selector(update))
     displayLink?.preferredFramesPerSecond = 60
     displayLink?.add(to: .main, forMode: .common)
@@ -72,24 +80,20 @@ class ClickWheelPhysics: ObservableObject {
 
     guard !isDragging else { return }
 
-    // Apply momentum
+    // Apply momentum with friction
     if abs(angularMomentum) > 0.0001 {
       angularMomentum *= friction
 
-      // Edge resistance (soft resistance, never hard stops)
-      // But for a continuous wheel, we only apply this if we want to simulate bounds.
-      // In the iPod, it's a continuous circle, but the list has bounds.
-      // We'll handle list bounds resistance here.
+      // Update buffer from momentum
+      let deltaDegrees = (angularMomentum * 180.0 / .pi)
+      rotationBuffer += deltaDegrees
+      processBuffer()
 
       currentAngle += angularMomentum
-
-      // Update selection based on angle
-      updateSelectionFromAngle()
-
-      // Snap to nearest item when momentum is low
-      if abs(angularMomentum) < 0.005 {
-        snapToNearestItem()
-      }
+    } else {
+      // Momentum Snapping Logic
+      // If we are stopped but not perfectly on a tick, gently snap
+      // This is simulated by processBuffer checking the threshold
     }
   }
 
@@ -104,6 +108,7 @@ class ClickWheelPhysics: ObservableObject {
   func startDrag(at point: CGPoint, center: CGPoint) {
     isDragging = true
     angularMomentum = 0
+    // Keep rotationBuffer to avoid "jump" if dragging fast
     lastDragAngle = angleFromPoint(point, center: center)
     previousAngle = lastDragAngle
   }
@@ -124,16 +129,20 @@ class ClickWheelPhysics: ObservableObject {
     currentAngle += deltaAngle
     lastDragAngle = newAngle
 
-    // Calculate velocity for momentum
-    angularVelocity = deltaAngle / 0.016
-    angularMomentum = (angularMomentum * 0.5) + (angularVelocity * (1.0 - inertia))
+    // Update relative buffer (in degrees)
+    let deltaDegrees = (deltaAngle * 180.0 / .pi)
+    rotationBuffer += deltaDegrees
 
-    updateSelectionFromAngle()
+    processBuffer()
+
+    // Calculate velocity for momentum (with smoothing)
+    let instantaneousVelocity = deltaAngle / 0.016
+    angularVelocity = (angularVelocity * 0.7) + (instantaneousVelocity * 0.3)
+    angularMomentum = angularVelocity * (1.0 - inertia)
   }
 
   func endDrag() {
     isDragging = false
-    // Momentum will continue via update loop
   }
 
   func angleFromPoint(_ point: CGPoint, center: CGPoint) -> Double {
@@ -142,43 +151,42 @@ class ClickWheelPhysics: ObservableObject {
     return atan2(dy, dx)
   }
 
-  func updateSelectionFromAngle() {
-    let normalized = normalizeAngle(currentAngle)
-    let targetIndex = Int((normalized / tickAngle).rounded()) % numberOfItems
-    let newIndex = targetIndex < 0 ? targetIndex + numberOfItems : targetIndex
+  private func processBuffer() {
+    // If buffer exceeds threshold, move selection and subtract from buffer
+    let threshold = degreesPerStep
 
-    if newIndex != selectionIndex {
-      selectionIndex = newIndex
-      // Trigger haptic feedback
-      triggerHaptic(.light)
+    if abs(rotationBuffer) >= threshold {
+      let steps = Int(rotationBuffer / threshold)
+
+      // Update index with bounds checking
+      let proposedIndex = selectionIndex + steps
+      let clampedIndex = max(0, min(proposedIndex, numberOfItems - 1))
+
+      if clampedIndex != selectionIndex {
+        selectionIndex = clampedIndex
+        triggerTickSensory()
+      }
+
+      rotationBuffer -= Double(steps) * threshold
     }
-  }
-
-  func snapToNearestItem() {
-    let normalized = normalizeAngle(currentAngle)
-    let targetAngle = Double(selectionIndex) * tickAngle
-
-    var diff = targetAngle - normalized
-    if diff > .pi { diff -= 2.0 * .pi }
-    if diff < -.pi { diff += 2.0 * .pi }
-
-    // Cubic-out snapping animation (120-180ms)
-    withAnimation(.timingCurve(0.215, 0.61, 0.355, 1, duration: 0.15)) {
-      currentAngle += diff
-    }
-
-    angularMomentum = 0
   }
 
   var hapticsEnabled: Bool = true
 
-  func triggerHaptic(_ style: UIImpactFeedbackGenerator.FeedbackStyle) {
+  private func triggerTickSensory() {
     guard hapticsEnabled else { return }
-    let generator = UIImpactFeedbackGenerator(style: style)
-    generator.impactOccurred()
+
+    // Taptic feedback for the "tick"
+    let generator = UIImpactFeedbackGenerator(style: .light)
+    generator.prepare()
+    generator.impactOccurred(intensity: 0.65)
+
+    // Optional: Log tick for debugging sensory sync
+    // print("ClickWheelPhysics: Tick @ Index \(selectionIndex)")
   }
 
   func centerButtonPress() {
-    triggerHaptic(.medium)
+    let generator = UIImpactFeedbackGenerator(style: .medium)
+    generator.impactOccurred()
   }
 }
