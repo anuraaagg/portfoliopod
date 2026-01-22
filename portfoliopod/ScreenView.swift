@@ -310,7 +310,7 @@ struct NavigationContentView: View {
     case .experiment:
       if let payloadID = node.payloadID {
         if payloadID == "podbreaker" {
-          PodBreakerView(wheelAngle: $physics.currentAngle)
+          PodBreakerView(physics: physics)
         } else if payloadID == "coverflow" {
           CoverFlowView(items: contentStore.rootMenu.children ?? [], selectedIndex: $selectedIndex)
         } else if let content = contentStore.getExperimentContent(id: payloadID) {

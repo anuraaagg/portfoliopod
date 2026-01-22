@@ -181,12 +181,18 @@ class ClickWheelPhysics: ObservableObject {
     generator.prepare()
     generator.impactOccurred(intensity: 0.65)
 
+    // Audio feedback
+    SoundManager.shared.playClick()
+
     // Optional: Log tick for debugging sensory sync
     // print("ClickWheelPhysics: Tick @ Index \(selectionIndex)")
   }
 
+  public let centerPressSubject = PassthroughSubject<Void, Never>()
+
   func centerButtonPress() {
     let generator = UIImpactFeedbackGenerator(style: .medium)
     generator.impactOccurred()
+    centerPressSubject.send()
   }
 }

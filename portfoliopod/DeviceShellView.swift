@@ -49,25 +49,12 @@ struct DeviceShellView: View {
           onMenuPress: handleMenuPress,
           isBooting: $isBooting,
           isPoweredOn: $isPoweredOn,
-          stickerStore: stickerStore
+          stickerStore: stickerStore,
+          motionManager: motionManager  // Pass motion manager
         )
         .frame(width: min(geometry.size.width * 0.9, 360))
-        .aspectRatio(0.56, contentMode: .fit)  // Shorter, more stout aspect ratio
+        .aspectRatio(0.597, contentMode: .fit)  // Real iPod Classic Ratio (61.8mm / 103.5mm)
         .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
-        .overlay(
-          // Boot Loader Animation
-          Group {
-            if isBooting && isPoweredOn {
-              BootLoaderView(isBooting: $isBooting)
-                .cornerRadius(16)
-            }
-            // Screen Off State (Black Overlay)
-            if !isPoweredOn {
-              Color.black
-                .cornerRadius(16)
-            }
-          }
-        )
       }
       .onAppear {
         // Sync physics with initial items
@@ -144,12 +131,35 @@ struct RealisticIPodShell: View {
   @Binding var isBooting: Bool
   @Binding var isPoweredOn: Bool
   @ObservedObject var stickerStore: StickerStore
+  @ObservedObject var motionManager: MotionManager  // Accept motion manager
 
   var body: some View {
     GeometryReader { geo in
       let width = geo.size.width
 
       ZStack {
+        // Power Button "Outside" (Top Edge)
+        // Simulated as sitting on the top casing
+        RoundedRectangle(cornerRadius: 2)
+          .fill(
+            LinearGradient(
+              colors: [Color(white: 0.25), Color(white: 0.15)],
+              startPoint: .top,
+              endPoint: .bottom
+            )
+          )
+          .frame(width: width * 0.10, height: width * 0.03)  // ~6mm wide, 2mm tall
+          .offset(x: width * 0.25, y: -geo.size.height / 2 - (width * 0.015))  // Top-Right, protruding
+          .onTapGesture {
+            let generator = UIImpactFeedbackGenerator(style: .medium)
+            generator.impactOccurred()
+            withAnimation(.easeInOut(duration: 0.3)) {
+              isPoweredOn.toggle()
+            }
+            if isPoweredOn { isBooting = true }
+          }
+          .zIndex(0)  // Behind the main face plate effectively, or just sitting up top
+
         // Main Body (Dark Slate Blue - Modern iPod)
         RoundedRectangle(cornerRadius: 28)  // Softer, more modern corners
           .fill(
@@ -191,62 +201,73 @@ struct RealisticIPodShell: View {
 
         // Internal Content Area
         VStack(spacing: 0) {
-          // Power Button (Top edge)
-          HStack {
-            Spacer()
-            RoundedRectangle(cornerRadius: 2)
-              .fill(Color(white: 0.25))
-              .frame(width: 40, height: 4)
-              .offset(y: -2)
-              .onTapGesture {
-                let generator = UIImpactFeedbackGenerator(style: .medium)
-                generator.impactOccurred()
+          // Top Padding (Forehead): ~7mm real world relative
+          Color.clear.frame(height: width * 0.11)
 
-                withAnimation(.easeInOut(duration: 0.3)) {
-                  isPoweredOn.toggle()
-                }
+          // Main Control Cluster
+          VStack(spacing: 0) {
+            // Screen Cluster
+            ZStack {
+              // Bezel (Real width ~84% of device)
+              RoundedRectangle(cornerRadius: 15)  // Slightly tighter corners for realism
+                .fill(Color(white: 0.06))
+                .frame(width: width * 0.84, height: width * 0.65)  // ~4:3 aspectish + bezel
+                .overlay(
+                  RoundedRectangle(cornerRadius: 15)
+                    .strokeBorder(Color(white: 0.15), lineWidth: 1.5)
+                )
 
-                if isPoweredOn {
-                  // Reset boot state when turning on
-                  isBooting = true
-                }
-              }
-          }
-          .padding(.trailing, width * 0.08)
-
-          // Modern Large Screen (Square-ish ratio like reference)
-          ZStack {
-            // Bezel (Dark border around screen)
-            RoundedRectangle(cornerRadius: 24)
-              .fill(Color(white: 0.06))
-              .frame(width: width * 0.84, height: width * 0.88)  // 8% padding on each side (100 - 84 = 16 / 2 = 8%)
-              .overlay(
-                RoundedRectangle(cornerRadius: 24)
-                  .strokeBorder(Color(white: 0.15), lineWidth: 1.5)
+              // Viewport (2.5" diag -> 0.82 width ratio, actual display)
+              ScreenView(
+                contentStore: contentStore,
+                navigationStack: $navigationStack,
+                selectedIndex: $selectedIndex,
+                physics: physics
               )
+              .frame(width: width * 0.79, height: width * 0.60)  // LCD Area
+              .cornerRadius(12)
+              .offset(
+                x: CGFloat(motionManager.tilt) * 3.0,
+                y: CGFloat(motionManager.tilt) * 2.0
+              )
+              .overlay(
+                Group {
+                  if isBooting && isPoweredOn {
+                    BootLoaderView(isBooting: $isBooting)
+                  }
+                  if !isPoweredOn {
+                    Color.black
+                  }
 
-            // Actual Viewport
-            ScreenView(
-              contentStore: contentStore,
-              navigationStack: $navigationStack,
-              selectedIndex: $selectedIndex,
-              physics: physics
+                  // Inner Shadow
+                  RoundedRectangle(cornerRadius: 12)
+                    .stroke(
+                      LinearGradient(
+                        colors: [.black.opacity(0.6), .black.opacity(0.1)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                      ),
+                      lineWidth: 3
+                    )
+                    .blur(radius: 1.5)
+                }
+              )
+              .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+
+            // Fixed tight gap (Real world is ~8-10mm, user wants tight 5%)
+            Color.clear.frame(height: width * 0.08)
+
+            // Click Wheel (Real: 38.1mm / 61.8mm = 61.6%)
+            ClickWheelView(
+              physics: physics,
+              onCenterPress: onCenterPress,
+              onMenuPress: onMenuPress
             )
-            .frame(width: width * 0.80, height: width * 0.84)
-            .cornerRadius(20)  // Slightly smaller than bezel
+            .frame(width: width * 0.616, height: width * 0.616)
           }
-          .padding(.top, width * 0.08)
 
-          Spacer()
-
-          // Smaller Click Wheel (fits inside body with margins)
-          ClickWheelView(
-            physics: physics,
-            onCenterPress: onCenterPress,
-            onMenuPress: onMenuPress
-          )
-          .frame(width: width * 0.65, height: width * 0.65)  // Smaller: 32.5% radius
-          .padding(.bottom, width * 0.12)
+          Spacer(minLength: width * 0.05)  // Natural Chin
         }
       }
     }
