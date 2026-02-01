@@ -54,27 +54,24 @@ struct PodBreakerView: View {
         // Bricks
         ForEach(bricks) { brick in
           if !brick.isDestroyed {
-            RoundedRectangle(cornerRadius: 2)
+            RoundedRectangle(cornerRadius: 0)
               .fill(brick.color)
               .frame(width: brick.rect.width - 2, height: brick.rect.height - 2)  // Gap between bricks
               .position(x: brick.rect.midX, y: brick.rect.midY)
-              .shadow(color: brick.color.opacity(0.5), radius: 2, x: 0, y: 0)
           }
         }
 
         // Ball
-        Circle()
-          .fill(Color.white)
+        Rectangle()
+          .fill(Color.red)
           .frame(width: ballRadius * 2, height: ballRadius * 2)
           .position(ballPosition)
-          .shadow(color: .white.opacity(0.8), radius: 4)
 
         // Paddle
-        RoundedRectangle(cornerRadius: 3)
-          .fill(Color.white)
+        Rectangle()
+          .fill(Color.red)
           .frame(width: paddleWidth, height: paddleHeight)
           .position(x: paddleX, y: geo.size.height - 30)
-          .shadow(color: .blue.opacity(0.5), radius: 5)
 
         // --- HUD ---
         VStack {
@@ -98,50 +95,53 @@ struct PodBreakerView: View {
 
         // --- States Overlays ---
         if gameState == .menu {
-          VStack(spacing: 16) {
-            Text("POD BREAKER")
-              .font(.system(size: 28, weight: .heavy, design: .rounded))
-              .foregroundColor(.white)
-              .shadow(color: .blue, radius: 10)
-
-            Text("Press Center to Start")
-              .font(.system(size: 14, weight: .medium))
-              .foregroundColor(.gray)
-              .blinking(duration: 1.0)
-          }
-          .background(Color.black.opacity(0.7).cornerRadius(12))
-        } else if gameState == .gameOver {
-          VStack(spacing: 12) {
-            Text("GAME OVER")
-              .font(.system(size: 24, weight: .bold))
+          VStack(spacing: 20) {
+            Text("[ POD BREAKER ]")
+              .font(.system(size: 24, weight: .bold, design: .monospaced))
               .foregroundColor(.red)
 
-            Text("Final Score: \(score)")
-              .font(.system(size: 16, weight: .medium))
+            Text("> PRESS CENTER TO START")
+              .font(.system(size: 12, weight: .bold, design: .monospaced))
+              .foregroundColor(.white)
+              .blinking(duration: 0.8)
+          }
+          .padding(40)
+          .background(Color.black)
+          .overlay(Rectangle().stroke(Color.red, lineWidth: 2))
+        } else if gameState == .gameOver {
+          VStack(spacing: 16) {
+            Text(":: GAME OVER ::")
+              .font(.system(size: 20, weight: .bold, design: .monospaced))
+              .foregroundColor(.red)
+
+            Text("FINAL SCORE: \(score)")
+              .font(.system(size: 14, weight: .bold, design: .monospaced))
               .foregroundColor(.white)
 
-            Text("Press Center to Retry")
-              .font(.system(size: 12))
+            Text("> PRESS CENTER TO RETRY")
+              .font(.system(size: 10, weight: .bold, design: .monospaced))
               .foregroundColor(.gray)
           }
-          .padding(20)
-          .background(RoundedRectangle(cornerRadius: 12).fill(Color(white: 0.1)))
+          .padding(30)
+          .background(Color.black)
+          .overlay(Rectangle().stroke(Color.red, lineWidth: 1))
         } else if gameState == .victory {
-          VStack(spacing: 12) {
-            Text("YOU WON!")
-              .font(.system(size: 24, weight: .bold))
-              .foregroundColor(.green)
+          VStack(spacing: 16) {
+            Text("[ VICTORY ]")
+              .font(.system(size: 20, weight: .bold, design: .monospaced))
+              .foregroundColor(.red)
 
-            Text("Score: \(score)")
-              .font(.system(size: 16, weight: .medium))
+            Text("SCORE: \(score)")
+              .font(.system(size: 14, weight: .bold, design: .monospaced))
               .foregroundColor(.white)
 
-            Text("Press Center to Play Again")
-              .font(.system(size: 12))
+            Text("> PRESS CENTER AGAIN")
+              .font(.system(size: 10, weight: .bold, design: .monospaced))
               .foregroundColor(.gray)
           }
-          .padding(20)
-          .background(RoundedRectangle(cornerRadius: 12).fill(Color(white: 0.1)))
+          .padding(30)
+          .background(Color.black)
+          .overlay(Rectangle().stroke(Color.red, lineWidth: 2))
         }
 
       }

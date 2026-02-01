@@ -24,6 +24,11 @@ class MetalRenderer: NSObject, MTKViewDelegate {
   var grainScale: Float = 0.003
   var vignetteAmount: Float = 0.15
 
+  // Layout parameters
+  var bottomInset: Float = 0
+  var powerButtonSize: SIMD2<Float> = SIMD2<Float>(10, 2)  // width, height in points
+  var powerButtonCorner: Float = 1.0  // corner radius in points
+
   override init() {
     super.init()
     setupMetal()
@@ -51,7 +56,14 @@ class MetalRenderer: NSObject, MTKViewDelegate {
     guard let vertexFunction = library.makeFunction(name: "vertex_main"),
       let fragmentFunction = library.makeFunction(name: "fragment_main")
     else {
-      print("MetalRenderer Error: Could not find shader functions.")
+      print("MetalRenderer Error: Could not find shader functions 'vertex_main'/'fragment_main'.")
+      if let lib = device.makeDefaultLibrary() {
+        let names = lib.functionNames.joined(separator: ", ")
+        print("MetalRenderer Debug: Available functions in default library: \(names)")
+        print(
+          "Hint: Ensure Shaders.metal contains 'vertex_main' and 'fragment_main' and is part of the target."
+        )
+      }
       return
     }
 
@@ -100,6 +112,10 @@ class MetalRenderer: NSObject, MTKViewDelegate {
 
   func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
     resolution = SIMD2<Float>(Float(size.width), Float(size.height))
+    if let window = view.window {
+      let inset = Float(window.safeAreaInsets.bottom)
+      bottomInset = inset
+    }
   }
 
   func draw(in view: MTKView) {
@@ -143,6 +159,14 @@ class MetalRenderer: NSObject, MTKViewDelegate {
     renderEncoder.setFragmentBytes(&gs, length: MemoryLayout<Float>.size, index: 4)
     renderEncoder.setFragmentBytes(&va, length: MemoryLayout<Float>.size, index: 5)
 
+    var bi = bottomInset
+    var pbs = powerButtonSize
+    var pbc = powerButtonCorner
+
+    renderEncoder.setFragmentBytes(&bi, length: MemoryLayout<Float>.size, index: 6)
+    renderEncoder.setFragmentBytes(&pbs, length: MemoryLayout<SIMD2<Float>>.size, index: 7)
+    renderEncoder.setFragmentBytes(&pbc, length: MemoryLayout<Float>.size, index: 8)
+
     renderEncoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4)
     renderEncoder.endEncoding()
 
@@ -162,11 +186,21 @@ struct MetalView: UIViewRepresentable {
     mtkView.enableSetNeedsDisplay = false
     mtkView.isPaused = false
     mtkView.framebufferOnly = false
+
+    mtkView.autoResizeDrawable = true
+    // Replacement for deprecated UIScreen.main.scale
+    let scale = (UIApplication.shared.connectedScenes.first as? UIWindowScene)?.screen.scale ?? 3.0
+    mtkView.contentScaleFactor = scale
+    mtkView.isOpaque = false
+    mtkView.clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
+
     return mtkView
   }
 
   func updateUIView(_ uiView: MTKView, context: Context) {
     context.coordinator.lightAngle = lightAngle
+    let inset = Float(uiView.window?.safeAreaInsets.bottom ?? uiView.safeAreaInsets.bottom)
+    context.coordinator.bottomInset = inset
   }
 
   func makeCoordinator() -> MetalRenderer {

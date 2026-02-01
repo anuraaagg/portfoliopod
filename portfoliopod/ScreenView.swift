@@ -44,34 +44,48 @@ struct ScreenView: View {
                 .fill(Color(white: 0.98))
                 .frame(width: 120)
                 .overlay(
-                  VStack(spacing: 8) {
+                  VStack(spacing: 12) {
                     if selectedIndex < items.count {
                       let item = items[selectedIndex]
 
-                      if let imageName = item.imageName {
-                        Image(imageName)
-                          .resizable()
-                          .scaledToFit()
-                          .frame(maxWidth: 100, maxHeight: 100)
-                          .padding(8)
-                      } else {
-                        let icon = getCategoryIcon(for: item.title)
-                        Image(systemName: icon)
-                          .font(.system(size: 40))
-                          .foregroundColor(Color(red: 0, green: 0.35, blue: 0.85).opacity(0.7))
+                      ZStack {
+                        if let imageName = item.imageName {
+                          Image(imageName)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 80, height: 80)
+                            .padding(8)
+                        } else {
+                          let icon = getCategoryIcon(for: item.title)
+                          Image(systemName: icon)
+                            .font(.system(size: 32))
+                            .foregroundColor(SettingsStore.shared.theme.accentColor)
+                        }
                       }
+                      .frame(width: 100, height: 100)
+                      .background(Color.white)
+                      .overlay(
+                        Rectangle()
+                          .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+                      )
 
-                      Text(item.title)
-                        .font(.system(size: 12, weight: .bold))
+                      Text(item.title.uppercased())
+                        .font(.system(size: 10, weight: .bold, design: .monospaced))
                         .foregroundColor(.black)
 
                       if let count = item.children?.count {
-                        Text("\(count) items")
-                          .font(.system(size: 10, weight: .semibold))
+                        Text("\(count) ITEMS")
+                          .font(.system(size: 8, weight: .semibold, design: .monospaced))
                           .foregroundColor(.gray)
                       }
                     }
                   }
+                )
+                .overlay(
+                  Rectangle()
+                    .fill(Color.black.opacity(0.1))
+                    .frame(width: 1),
+                  alignment: .leading
                 )
             }
           }
@@ -113,18 +127,22 @@ struct VideoContentView: View {
       VStack {
         Spacer()
 
-        // Placeholder for video
+        // Placeholder for video (Brutalist style)
         ZStack {
-          RoundedRectangle(cornerRadius: 12)
-            .stroke(Color.white.opacity(0.3), lineWidth: 1)
+          Rectangle()
+            .stroke(SettingsStore.shared.theme.accentColor, lineWidth: 2)
 
           VStack(spacing: 12) {
             Image(systemName: "video.fill")
               .font(.system(size: 40))
-              .foregroundColor(.white)
+              .foregroundColor(SettingsStore.shared.theme.accentColor)
 
-            Text("Playing: \(videoName).mp4")
-              .font(.system(size: 14, weight: .bold))
+            Text("[ INITIALIZING VIDEO ... ]")
+              .font(.system(size: 12, weight: .bold, design: .monospaced))
+              .foregroundColor(SettingsStore.shared.theme.accentColor)
+
+            Text("SOURCE: \(videoName.uppercased()).MP4")
+              .font(.system(size: 10, weight: .medium, design: .monospaced))
               .foregroundColor(.white)
           }
         }
@@ -137,8 +155,8 @@ struct VideoContentView: View {
           Image(systemName: "backward.fill")
           Spacer()
           ZStack(alignment: .leading) {
-            Rectangle().fill(Color.white.opacity(0.3)).frame(height: 4)
-            Rectangle().fill(Color.white).frame(width: 120, height: 4)
+            Rectangle().fill(Color.white.opacity(0.1)).frame(height: 2)
+            Rectangle().fill(SettingsStore.shared.theme.accentColor).frame(width: 120, height: 2)
           }
           .frame(width: 180)
           Spacer()
@@ -199,16 +217,26 @@ struct MenuItemView: View {
 
   var body: some View {
     HStack {
-      Text(item.title)
-        .font(.system(size: 17, weight: isSelected ? .bold : .semibold))  // Bold, crisp typography
+      if let iconPath = item.iconPath,
+        let uiImage = UIImage(contentsOfFile: iconPath)
+      {
+        Image(uiImage: uiImage)
+          .resizable()
+          .aspectRatio(contentMode: .fit)
+          .frame(width: 44, height: 44)  // Icon size "same as others" (standard thumbnail feel)
+          .padding(.trailing, 8)
+      }
+
+      Text(isSelected ? "[ \(item.title) ]" : "  \(item.title)")
+        .font(.system(size: 15, weight: isSelected ? .bold : .medium, design: .monospaced))
         .foregroundColor(isSelected ? .white : .black)
 
       Spacer()
     }
     .padding(.horizontal, 16)
-    .padding(.vertical, 10)
+    .padding(.vertical, 8)
     .background(
-      isSelected ? Color(red: 0, green: 0.35, blue: 0.85) : Color.clear  // Classic blue selection
+      isSelected ? SettingsStore.shared.theme.accentColor : Color.clear  // Dynamic accent selection
     )
   }
 }
@@ -226,27 +254,27 @@ struct StatusBarView: View {
 
       Spacer()
 
-      Text(title)
-        .font(.system(size: 13, weight: .bold))
+      Text(title.uppercased())
+        .font(.system(size: 12, weight: .bold, design: .monospaced))
         .foregroundColor(.black)
 
       Spacer()
 
-      // Battery icon (Actual system battery)
+      // Battery icon
       HStack(spacing: 4) {
         Image(systemName: "battery.100")
-          .font(.system(size: 14))
-          .foregroundColor(.black)
+          .font(.system(size: 12))
+          .foregroundColor(SettingsStore.shared.theme.accentColor)
       }
     }
     .padding(.horizontal, 12)
     .padding(.vertical, 6)
-    .background(
-      LinearGradient(
-        colors: [Color(white: 0.92), Color(white: 0.8)],
-        startPoint: .top,
-        endPoint: .bottom
-      )
+    .background(Color(white: 0.95))
+    .overlay(
+      Rectangle()
+        .fill(Color.black.opacity(0.1))
+        .frame(height: 1),
+      alignment: .bottom
     )
     .onReceive(timer) { input in
       currentTime = input
@@ -271,6 +299,8 @@ struct NavigationContentView: View {
     VStack(spacing: 0) {
       if node.id.contains("nowplaying") {
         ClassicNowPlayingView()
+      } else if node.payloadID == "library" {
+        MusicLibraryView(navigationStack: $navigationStack, selectedIndex: $selectedIndex)
       } else if node.contentType == .menu, let children = node.children {
         MenuListView(
           items: children,
@@ -279,9 +309,14 @@ struct NavigationContentView: View {
           selectedIndex: $selectedIndex
         )
       } else {
-        ScrollView {
-          contentView
-            .padding(20)
+        ScrollViewReader { proxy in
+          ScrollView {
+            contentView
+              .id("top")
+              .padding(20)
+              .offset(y: -physics.scrollOffset)  // Drive scroll with wheel
+          }
+          .scrollDisabled(true)  // Authentic iPod experience
         }
       }
 
@@ -323,6 +358,29 @@ struct NavigationContentView: View {
       {
         WritingContentView(content: content)
       }
+    case .utility:
+      if let payloadID = node.payloadID {
+        switch payloadID {
+        case "clock":
+          ExtrasView(type: .clock)
+        case "browser":
+          ExtrasView(type: .browser)
+        case "notes":
+          ExtrasView(type: .notes)
+        case "search":
+          SearchView(
+            contentStore: contentStore, navigationStack: $navigationStack, physics: physics)
+        case "haptics":
+          SettingsView(type: .haptics)
+        case "clicker":
+          SettingsView(type: .clicker)
+        case "legal":
+          SettingsView(type: .legal)
+        default:
+          Text("Utility [\(payloadID.uppercased())] not implemented")
+            .font(.system(size: 14, design: .monospaced))
+        }
+      }
     default:
       Text("Content not available")
         .foregroundColor(.gray)
@@ -335,30 +393,30 @@ struct TextContentView: View {
   let content: TextContent
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 16) {
+    VStack(alignment: .leading, spacing: 20) {
       if let title = content.title {
-        Text(title)
-          .font(.system(size: 20, weight: .bold))
-          .foregroundColor(.black)
+        Text("> \(title.uppercased())")
+          .font(.system(size: 18, weight: .bold, design: .monospaced))
+          .foregroundColor(SettingsStore.shared.theme.accentColor)
       }
 
       if !content.body.isEmpty {
         Text(content.body)
-          .font(.system(size: 15, weight: .medium))
-          .foregroundColor(Color(white: 0.2))
-          .lineSpacing(4)
+          .font(.system(size: 14, weight: .medium, design: .monospaced))
+          .foregroundColor(.black)
+          .lineSpacing(6)
       }
 
       if let bullets = content.bullets {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
           ForEach(bullets, id: \.self) { bullet in
-            HStack(alignment: .top, spacing: 10) {
-              Text("•")
-                .foregroundColor(.black)
-                .font(.system(size: 14, weight: .bold))
+            HStack(alignment: .top, spacing: 8) {
+              Text("::")
+                .foregroundColor(.red)
+                .font(.system(size: 14, weight: .bold, design: .monospaced))
               Text(bullet)
-                .font(.system(size: 15, weight: .medium))
-                .foregroundColor(Color(white: 0.2))
+                .font(.system(size: 14, weight: .medium, design: .monospaced))
+                .foregroundColor(.black)
             }
           }
         }
@@ -372,36 +430,36 @@ struct ProjectContentView: View {
   let content: ProjectContent
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 16) {
-      Text(content.title)
-        .font(.system(size: 22, weight: .bold))
-        .foregroundColor(.black)
+    VStack(alignment: .leading, spacing: 20) {
+      Text("[ \(content.title.uppercased()) ]")
+        .font(.system(size: 18, weight: .bold, design: .monospaced))
+        .foregroundColor(.red)
 
-      VStack(alignment: .leading, spacing: 8) {
-        Text("OVERVIEW")
-          .font(.system(size: 11, weight: .bold))
+      VStack(alignment: .leading, spacing: 10) {
+        Text("// OVERVIEW")
+          .font(.system(size: 10, weight: .bold, design: .monospaced))
           .foregroundColor(.gray)
 
         Text(content.overview)
-          .font(.system(size: 15, weight: .medium))
-          .foregroundColor(Color(white: 0.2))
-          .lineSpacing(4)
+          .font(.system(size: 14, weight: .medium, design: .monospaced))
+          .foregroundColor(.black)
+          .lineSpacing(6)
       }
 
-      VStack(alignment: .leading, spacing: 8) {
-        Text("OUTCOME")
-          .font(.system(size: 11, weight: .bold))
+      VStack(alignment: .leading, spacing: 10) {
+        Text("// OUTCOME")
+          .font(.system(size: 10, weight: .bold, design: .monospaced))
           .foregroundColor(.gray)
-          .padding(.top, 8)
 
         VStack(alignment: .leading, spacing: 8) {
           ForEach(content.outcome, id: \.self) { outcome in
             HStack(alignment: .top, spacing: 8) {
-              Text("•")
-                .foregroundColor(.black)
+              Text("+")
+                .foregroundColor(.red)
+                .font(.system(size: 14, weight: .bold, design: .monospaced))
               Text(outcome)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(Color(white: 0.3))
+                .font(.system(size: 14, weight: .medium, design: .monospaced))
+                .foregroundColor(.black)
             }
           }
         }
@@ -433,35 +491,35 @@ struct WritingContentView: View {
   let content: WritingContent
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 20) {
-      VStack(alignment: .leading, spacing: 4) {
-        Text(content.title)
-          .font(.system(size: 22, weight: .bold))
-          .foregroundColor(.black)
+    VStack(alignment: .leading, spacing: 24) {
+      VStack(alignment: .leading, spacing: 10) {
+        Text("> \(content.title.uppercased())")
+          .font(.system(size: 18, weight: .bold, design: .monospaced))
+          .foregroundColor(.red)
 
         if let readingTime = content.estimatedReadingTime {
-          Text("\(readingTime) MIN READ")
-            .font(.system(size: 10, weight: .bold))
+          Text("[ \(readingTime) MIN READ ]")
+            .font(.system(size: 10, weight: .bold, design: .monospaced))
             .foregroundColor(.gray)
         }
       }
 
-      // Progress bar
+      // Progress bar (Brutalist style)
       Rectangle()
-        .fill(Color(white: 0.9))
-        .frame(height: 2)
+        .fill(Color.black.opacity(0.05))
+        .frame(height: 4)
         .overlay(
           GeometryReader { g in
             Rectangle()
-              .fill(Color.black)
+              .fill(Color.red)
               .frame(width: g.size.width * 0.3)  // Example progress
           }
         )
 
       Text(content.body)
-        .font(.system(size: 15, weight: .medium))
-        .foregroundColor(Color(white: 0.15))
-        .lineSpacing(6)
+        .font(.system(size: 14, weight: .medium, design: .monospaced))
+        .foregroundColor(.black)
+        .lineSpacing(8)
     }
     .frame(maxWidth: .infinity, alignment: .leading)
   }
@@ -469,73 +527,133 @@ struct WritingContentView: View {
 
 struct ClassicNowPlayingView: View {
   var body: some View {
-    VStack(spacing: 20) {
-      // Album Art (Large, 6th Gen style)
+    VStack(spacing: 30) {
+      // Album Art (Brutalist frame)
       ZStack(alignment: .bottom) {
-        // Reflection
-        RoundedRectangle(cornerRadius: 8)
-          .fill(
-            LinearGradient(
-              colors: [Color.blue.opacity(0.1), .clear],
-              startPoint: .top,
-              endPoint: .bottom
-            )
-          )
-          .frame(width: 140, height: 40)
-          .offset(y: 100)
-          .blur(radius: 4)
-
-        RoundedRectangle(cornerRadius: 8)
-          .fill(Color.blue)
+        Rectangle()
+          .fill(Color.black)
           .frame(width: 140, height: 140)
-          .shadow(color: .black.opacity(0.1), radius: 10, y: 5)
           .overlay(
-            Image(systemName: "music.note")
+            Rectangle()
+              .stroke(SettingsStore.shared.theme.accentColor, lineWidth: 2)
+          )
+          .overlay(
+            BarVisualizer()
+              .frame(width: 120, height: 40)
+              .padding(.bottom, 10),
+            alignment: .bottom
+          )
+          .overlay(
+            Image(systemName: "waveform.path")
               .font(.system(size: 40))
-              .foregroundColor(.white.opacity(0.5))
+              .foregroundColor(SettingsStore.shared.theme.accentColor)
           )
       }
-      .padding(.top, 20)
+      .padding(.top, 40)
 
-      VStack(spacing: 4) {
-        Text("Track Name")
-          .font(.system(size: 16, weight: .bold))
-          .foregroundColor(.black)
-
-        Text("Artist Name")
-          .font(.system(size: 14, weight: .semibold))
+      VStack(spacing: 12) {
+        Text("[ NOW_PLAYING ]")
+          .font(.system(size: 10, weight: .bold, design: .monospaced))
           .foregroundColor(.gray)
 
-        Text("Album Name")
-          .font(.system(size: 12, weight: .medium))
-          .foregroundColor(.gray)
+        VStack(spacing: 6) {
+          Text("LOOPS: SESSION_01")
+            .font(.system(size: 16, weight: .bold, design: .monospaced))
+            .foregroundColor(.black)
+
+          Text("ANURAG")
+            .font(.system(size: 14, weight: .semibold, design: .monospaced))
+            .foregroundColor(SettingsStore.shared.theme.accentColor)
+        }
       }
 
-      // Progress Bar
-      VStack(spacing: 6) {
+      // Progress Bar (Terminal style)
+      VStack(spacing: 12) {
         ZStack(alignment: .leading) {
-          RoundedRectangle(cornerRadius: 2)
-            .fill(Color(white: 0.9))
+          Rectangle()
+            .fill(Color.black.opacity(0.1))
             .frame(height: 4)
 
-          RoundedRectangle(cornerRadius: 2)
-            .fill(Color.blue)
+          Rectangle()
+            .fill(SettingsStore.shared.theme.accentColor)
             .frame(width: 80, height: 4)
         }
-        .padding(.horizontal, 30)
+        .frame(width: 200)
 
         HStack {
-          Text("1:23")
+          Text("01:23")
           Spacer()
-          Text("-2:45")
+          Text("-02:45")
         }
-        .font(.system(size: 10, weight: .bold))
+        .font(.system(size: 10, weight: .bold, design: .monospaced))
         .foregroundColor(.gray)
-        .padding(.horizontal, 30)
+        .frame(width: 200)
       }
 
       Spacer()
     }
     .background(Color.white)
+  }
+}
+
+struct BarVisualizer: View {
+  @State private var barHeights: [CGFloat] = Array(repeating: 5, count: 12)
+  let timer = Timer.publish(every: 0.15, on: .main, in: .common).autoconnect()
+
+  var body: some View {
+    HStack(alignment: .bottom, spacing: 3) {
+      ForEach(0..<barHeights.count, id: \.self) { index in
+        Rectangle()
+          .fill(SettingsStore.shared.theme.accentColor.opacity(0.8))
+          .frame(width: 4, height: barHeights[index])
+          .animation(.spring(response: 0.2, dampingFraction: 0.5), value: barHeights[index])
+      }
+    }
+    .onReceive(timer) { _ in
+      for i in 0..<barHeights.count {
+        barHeights[i] = CGFloat.random(in: 4...30)
+      }
+    }
+  }
+}
+
+struct MusicLibraryView: View {
+  @ObservedObject var musicManager = MusicLibraryManager.shared
+  @Binding var navigationStack: [MenuNode]
+  @Binding var selectedIndex: Int
+
+  var body: some View {
+    VStack(spacing: 0) {
+      if musicManager.permissionStatus == .authorized {
+        let playlists = musicManager.playlists
+        VStack(spacing: 0) {
+          ForEach(Array(playlists.enumerated()), id: \.element.persistentID) { index, playlist in
+            HStack {
+              Text(index == selectedIndex ? "[ \(playlist.name ?? "Unknown") ]" : "  \(playlist.name ?? "Unknown")")
+                .font(.system(size: 15, weight: index == selectedIndex ? .bold : .medium, design: .monospaced))
+                .foregroundColor(index == selectedIndex ? .white : .black)
+              Spacer()
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(index == selectedIndex ? SettingsStore.shared.theme.accentColor : Color.clear)
+          }
+        }
+      } else {
+        VStack(spacing: 12) {
+          Image(systemName: "lock.fill")
+            .font(.system(size: 30))
+          Text("[ ACCESS_DENIED ]")
+            .font(.system(size: 14, weight: .bold, design: .monospaced))
+          Text("ENABLE MUSIC PERMISSIONS IN SETTINGS")
+            .font(.system(size: 10, design: .monospaced))
+            .foregroundColor(.gray)
+        }
+        .padding(.top, 60)
+      }
+    }
+    .onAppear {
+        musicManager.checkPermissions()
+    }
   }
 }

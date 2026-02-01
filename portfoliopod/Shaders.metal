@@ -64,9 +64,9 @@ fragment float4 fragment_main(VertexOut in [[stage_in]],
     // 1. Material Properties (Classic 6th Gen Matte Aluminum)
     // -------------------------------------------------------------------------
     // Darker slate/blue-gray base color (matches modern "Space Gray" or "Slate")
-    float3 albedo = float3(0.24, 0.28, 0.33); 
-    float metalRoughness = 0.65; // High roughness for matte finish
-    float F0 = 0.04; // Dielectric/Metal mix (aluminum has high F0 but painted/anodized is complex)
+    // Neutral "Industrial Slate" base color
+    float3 albedo = float3(0.18, 0.2, 0.22); 
+    float metalRoughness = 0.7; // Even more matte
     
     // -------------------------------------------------------------------------
     // 2. Micro-Surface Detail (Bead-Blasted Grain)
@@ -97,7 +97,6 @@ fragment float4 fragment_main(VertexOut in [[stage_in]],
     // Dot products
     float NdotL = max(dot(N, L), 0.0);
     float NdotH = max(dot(N, H), 0.0);
-    float NdotV = max(dot(N, V), 0.0);
     
     // Diffuse Term (Simplified Lambert for matte)
     // We wrap it slightly to simulate subsurface scattering/softness of anodizing

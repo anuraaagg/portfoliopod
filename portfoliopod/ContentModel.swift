@@ -13,6 +13,7 @@ enum ContentType: String, Codable {
   case project
   case experiment
   case writing
+  case utility
   case media
   case video
   case menu
@@ -25,10 +26,11 @@ struct MenuNode: Identifiable, Codable {
   let contentType: ContentType
   let payloadID: String?
   let imageName: String?  // Added for custom preview images
+  let iconPath: String?  // Added for icon-based navigation
 
   init(
     id: String, title: String, children: [MenuNode]? = nil, contentType: ContentType,
-    payloadID: String? = nil, imageName: String? = nil
+    payloadID: String? = nil, imageName: String? = nil, iconPath: String? = nil
   ) {
     self.id = id
     self.title = title
@@ -36,6 +38,7 @@ struct MenuNode: Identifiable, Codable {
     self.contentType = contentType
     self.payloadID = payloadID
     self.imageName = imageName
+    self.iconPath = iconPath
   }
 }
 
@@ -77,6 +80,18 @@ struct TimelineEntry: Codable {
 class ContentStore: ObservableObject {
   @Published var rootMenu: MenuNode
 
+  var allNodes: [MenuNode] {
+    var result: [MenuNode] = []
+    func flatten(_ node: MenuNode) {
+      if node.contentType != .menu {
+        result.append(node)
+      }
+      node.children?.forEach { flatten($0) }
+    }
+    flatten(rootMenu)
+    return result
+  }
+
   init() {
     self.rootMenu = ContentStore.createDefaultContent()
   }
@@ -84,93 +99,73 @@ class ContentStore: ObservableObject {
   static func createDefaultContent() -> MenuNode {
     return MenuNode(
       id: "root",
-      title: "Main Menu",
+      title: "INITIALIZING...",
       children: [
         MenuNode(
-          id: "nowplaying-root",
-          title: "Now Playing",
-          contentType: .text,  // Will be intercepted by contains("nowplaying")
-          payloadID: "now-playing"
+          id: "music-library",
+          title: "music",
+          contentType: .media,
+          payloadID: "library"
         ),
         MenuNode(
-          id: "music",
-          title: "Music",
-          children: [
-            MenuNode(
-              id: "on-repeat", title: "On Repeat", contentType: .text, payloadID: "on-repeat"),
-            MenuNode(
-              id: "artists", title: "Artists I Love", contentType: .text, payloadID: "artists"),
-            MenuNode(
-              id: "playlists", title: "Playlists", contentType: .text, payloadID: "playlists"),
-          ],
-          contentType: .menu
-        ),
-        MenuNode(
-          id: "hobby",
-          title: "Hobby",
+          id: "works",
+          title: "work",
           children: [
             MenuNode(
               id: "ninjacart", title: "NinjaCart Repayment", contentType: .project,
               payloadID: "ninjacart"),
             MenuNode(
-              id: "crm", title: "CRM – Sales System", contentType: .project,
-              payloadID: "crm"),
+              id: "airtribe-sales", title: "Airtribe Sales System", contentType: .project,
+              payloadID: "airtribe-sales"),
             MenuNode(
-              id: "summarify", title: "Summarify", contentType: .project, payloadID: "summarify"
-            ),
+              id: "summarify", title: "Summarify.me", contentType: .project, payloadID: "summarify"),
+            MenuNode(
+              id: "loops", title: "Loops: Music Site", contentType: .project, payloadID: "loops"),
+            MenuNode(
+              id: "taxes", title: "Taxes iOS App", contentType: .project, payloadID: "taxes"),
           ],
-          contentType: .menu,
-          imageName: "preview_hobby"
+          contentType: .menu
         ),
         MenuNode(
           id: "about",
-          title: "About Me",
+          title: "about",
           children: [
-            MenuNode(id: "who-am-i", title: "Who Am I?", contentType: .text, payloadID: "who-am-i"),
+            MenuNode(id: "who-am-i", title: "who am i?", contentType: .text, payloadID: "who-am-i"),
             MenuNode(
-              id: "what-i-do", title: "What I Do", contentType: .text, payloadID: "what-i-do"),
+              id: "experience", title: "experience", contentType: .text, payloadID: "experience"),
             MenuNode(
-              id: "how-i-work", title: "How I Work", contentType: .text, payloadID: "how-i-work"),
-            MenuNode(
-              id: "on-the-side", title: "On The Side", contentType: .text, payloadID: "on-the-side"),
-            MenuNode(
-              id: "people-i-admire", title: "People I Admire", contentType: .text,
-              payloadID: "people-i-admire"),
+              id: "philosophy", title: "philosophy", contentType: .text, payloadID: "philosophy"),
           ],
           contentType: .menu,
           imageName: "preview_about"
         ),
         MenuNode(
-          id: "experiments",
-          title: "Experiments",
+          id: "playground",
+          title: "playground",
           children: [
             MenuNode(
-              id: "about-experiments", title: "What Lives Here?", contentType: .text,
+              id: "experiments", title: "experiments", contentType: .text,
               payloadID: "about-experiments"),
             MenuNode(
-              id: "coverflow", title: "Cover Flow", contentType: .experiment, payloadID: "coverflow"
+              id: "podbreaker", title: "PodBreaker", contentType: .experiment,
+              payloadID: "podbreaker"
+            ),
+            MenuNode(
+              id: "coverflow", title: "Cover Flow", contentType: .experiment,
+              payloadID: "coverflow"
+            ),
+            MenuNode(
+              id: "nowplaying", title: "Now Playing", contentType: .media,
+              payloadID: "nowplaying"
             ),
           ],
           contentType: .menu,
           imageName: "preview_experiments"
         ),
         MenuNode(
-          id: "social",
-          title: "Social",
+          id: "musings",
+          title: "musings",
           children: [
-            MenuNode(id: "twitter", title: "Twitter", contentType: .text, payloadID: "twitter"),
-            MenuNode(id: "linkedin", title: "LinkedIn", contentType: .text, payloadID: "linkedin"),
-          ],
-          contentType: .menu,
-          imageName: "preview_social"
-        ),
-        MenuNode(
-          id: "writings",
-          title: "Writings",
-          children: [
-            MenuNode(
-              id: "about-writing", title: "About Writing", contentType: .text,
-              payloadID: "about-writing"),
             MenuNode(
               id: "design-systems", title: "On Design Systems", contentType: .writing,
               payloadID: "design-systems"),
@@ -178,19 +173,40 @@ class ContentStore: ObservableObject {
               id: "interaction", title: "Micro-Interactions", contentType: .writing,
               payloadID: "interaction"),
           ],
-          contentType: .menu,
-          imageName: "preview_writings"
+          contentType: .menu
+        ),
+        MenuNode(
+          id: "resume",
+          title: "resume",
+          contentType: .text,
+          payloadID: "resume"
+        ),
+        MenuNode(
+          id: "extras",
+          title: "extras",
+          children: [
+            MenuNode(id: "clock", title: "Clock", contentType: .utility, payloadID: "clock"),
+            MenuNode(id: "notes", title: "Notes", contentType: .utility, payloadID: "notes"),
+            MenuNode(
+              id: "browser", title: "Safari (Framer)", contentType: .utility, payloadID: "browser"),
+          ],
+          contentType: .menu
+        ),
+        MenuNode(
+          id: "search",
+          title: "search",
+          contentType: .utility,
+          payloadID: "search"
         ),
         MenuNode(
           id: "settings",
-          title: "Settings",
+          title: "settings",
           children: [
+            MenuNode(id: "haptics", title: "Haptics", contentType: .utility, payloadID: "haptics"),
             MenuNode(
-              id: "about-device", title: "About Device", contentType: .text,
-              payloadID: "about-device"),
-            MenuNode(id: "resume", title: "Resume", contentType: .text, payloadID: "resume"),
-            MenuNode(id: "contact", title: "Contact", contentType: .text, payloadID: "contact"),
-            MenuNode(id: "preferences", title: "Preferences", contentType: .menu),
+              id: "clicker", title: "Clicker Sound", contentType: .utility, payloadID: "clicker"),
+            MenuNode(
+              id: "theme", title: "Legal & Legal", contentType: .utility, payloadID: "legal"),  // Settings/About hybrid
           ],
           contentType: .menu
         ),
@@ -201,124 +217,47 @@ class ContentStore: ObservableObject {
 
   func getTextContent(id: String) -> TextContent? {
     let content: [String: TextContent] = [
-      // ===== MUSIC =====
-      "on-repeat": TextContent(
-        id: "on-repeat",
-        title: "On Repeat",
-        body:
-          "This section is visual-first.\nMinimal text. Motion, sound, and interaction respond to music.\n\nAlways in motion.",
-        bullets: nil
-      ),
-      "artists": TextContent(
-        id: "artists",
-        title: "Artists I Love",
-        body: "Artists I keep coming back to:",
-        bullets: [
-          "Radiohead",
-          "Frank Ocean",
-          "Aphex Twin",
-          "Four Tet",
-          "Nils Frahm",
-          "Burial",
-        ]
-      ),
-      "playlists": TextContent(
-        id: "playlists",
-        title: "Playlists",
-        body: "",
-        bullets: [
-          "late night walks",
-          "coding but make it emotional",
-          "slow mornings",
-          "things i'd play live",
-        ]
-      ),
-      // ===== ABOUT =====
       "who-am-i": TextContent(
         id: "who-am-i",
-        title: "Who Am I?",
+        title: "who am i?",
         body:
-          "I'm Anurag.\n\nI ask questions, explore ideas, and tinker with systems.\n\nHow can technology feel a little more human?",
-        bullets: nil
-      ),
-      "what-i-do": TextContent(
-        id: "what-i-do",
-        title: "What I Do",
-        body:
-          "Currently at Airtribe.\n\nHow can edtech tools better support growth?\n\nI work across learning, sales, and AI.",
-        bullets: nil
-      ),
-      "how-i-work": TextContent(
-        id: "how-i-work",
-        title: "How I Work",
-        body:
-          "Through product design, systems thinking, and close collaboration.\n\nWhat happens when teams align around real user problems?",
-        bullets: nil
-      ),
-      "on-the-side": TextContent(
-        id: "on-the-side",
-        title: "On The Side",
-        body:
-          "Code, AI, and prototyping.\n\nHow can small experiments quietly improve my design practice?",
+          "i ask, i explore, i tinker.\n\nhey, i’m anurag. a product designer exploring how systems, behavior, and design come together to make technology feel more human.",
         bullets: [
-          "Creative coding",
-          "DJing",
-          "Photography",
-          "Dancing",
+          "currently building learning tools at Airtribe",
+          "earlier: Newton School, NinjaCart",
+          "pixels → systems → emotion → play",
         ]
       ),
-      "people-i-admire": TextContent(
-        id: "people-i-admire",
-        title: "People I Admire",
-        body: "",
+      "experience": TextContent(
+        id: "experience",
+        title: "experience",
+        body: "i’ve worked across edtech and fintech to build tools that solve real problems.",
         bullets: [
-          "Dieter Rams — clarity and restraint",
-          "Jamie Hewlett — expressive, playful worlds",
-          "Brian Eno — systems, chance, and art",
+          "Airtribe (Sep 2024 - present)",
+          "Newton School (May 2024 - Aug 2024)",
+          "Ninjacart (Jan 2024 - May 2024)",
+          "Cognizant (Nov 2020 - March 2024)",
         ]
       ),
-      // ===== EXPERIMENTS =====
+      "philosophy": TextContent(
+        id: "philosophy",
+        title: "philosophy",
+        body:
+          "design isn’t just about pixels. it’s about understanding how people think.\n\nthis intersection of systems, behavior, and design is where my process lives—making products that feel simple, human, and delightful.",
+        bullets: nil
+      ),
       "about-experiments": TextContent(
         id: "about-experiments",
-        title: "What Lives Here?",
+        title: "playground",
         body:
-          "Interactive sketches, creative coding, AI explorations, half-finished ideas.\n\nWhat happens when curiosity leads instead of requirements?\n\nNew tools, interactions, and workflows.\n\nHow fast can an idea move from thought to prototype?",
-        bullets: nil
-      ),
-      // ===== WRITING =====
-      "about-writing": TextContent(
-        id: "about-writing",
-        title: "About Writing",
-        body:
-          "How do I think when I slow down?\n\nShort reflections on design, systems, interaction, and feeling.\n\nNot tutorials. Not hot takes.",
-        bullets: nil
-      ),
-      // ===== SETTINGS / CONTACT =====
-      "about-device": TextContent(
-        id: "about-device",
-        title: "About Device",
-        body: "Name: Anurag\nModel: iPod\nOS: PortfolioOS\n\nI design systems that feel human.",
-        bullets: nil
-      ),
-      "now-playing": TextContent(
-        id: "now-playing",
-        title: "Now Playing",
-        body:
-          "Exploring ideas quietly.\nDesigning slowly.\n\n(Actual song metadata would appear here via MusicKit.)",
-        bullets: nil
-      ),
-      "contact": TextContent(
-        id: "contact",
-        title: "Contact",
-        body:
-          "Let's connect.\n\nEmail: hello@anuraaagg.com\nTwitter: @anuraaagg\nLinkedIn: linkedin.com/in/anuraaagg\nGitHub: github.com/anuraaagg\nWebsite: anuraaagg.framer.website",
+          "INITIALIZING... ID: AN0THER DE3IGNER\n\na collection of interactive experiments. creative coding, swiftUI, and interactions exploring the edges of what's possible.",
         bullets: nil
       ),
       "resume": TextContent(
         id: "resume",
-        title: "Resume",
+        title: "resume",
         body:
-          "Product Designer\n\nCurrently at Airtribe.\nPreviously: NinjaCart.\n\nI design systems that feel human.",
+          "product designer. artist. human.\n\ndownload the full version: anuraaagg.framer.website/resume",
         bullets: nil
       ),
     ]
@@ -329,35 +268,52 @@ class ContentStore: ObservableObject {
     let content: [String: ProjectContent] = [
       "ninjacart": ProjectContent(
         id: "ninjacart",
-        title: "NinjaCart Repayment",
+        title: "Ninja Trade Card",
         overview:
-          "Redesigned the repayment experience to make payments clearer, calmer, and more predictable.\n\nUsers struggled to understand repayment amounts, timelines, and required actions. I redesigned the end-to-end repayment flow to improve clarity and reduce errors.",
+          "Redesigned the repayment experience at NinjaCart to make fintech more calm and predictable.",
         outcome: [
-          "Reduced support tickets by ~35%",
-          "Improved completion by ~22%",
-          "Reduced drop-offs by ~18%",
+          "Fintech, Payments, Mobile UX",
+          "2024 Project",
         ]
       ),
-      "crm": ProjectContent(
-        id: "crm",
-        title: "CRM – Sales System",
+      "airtribe-sales": ProjectContent(
+        id: "airtribe-sales",
+        title: "Sales opportunity system",
         overview:
-          "Built a role-based CRM to help sales teams act faster and managers track performance clearly.\n\nSales teams lacked visibility into lead quality, follow-ups, and performance. I designed a system focused on prioritisation, clear actions, and real-time monitoring.",
+          "B2B CRM and dashboard design for Airtribe to streamline tracking and follow-ups.",
         outcome: [
-          "Reduced follow-up time by ~30%",
-          "Improved tracking accuracy by ~40%",
-          "Contributed to 2× sales revenue",
+          "B2B, CRM, Dashboard Design",
+          "2024 - Current",
         ]
       ),
       "summarify": ProjectContent(
         id: "summarify",
-        title: "Summarify",
+        title: "Summarify.me",
         overview:
-          "A lightweight tool to turn long content into clear summaries.\n\nPeople often avoid long content due to time constraints. Summarify helps users quickly grasp key information.",
+          "A lightweight tool to turn long content into clear summaries using AI.",
         outcome: [
-          "Reduced reading time by ~60%",
-          "Improved recall by ~25%",
-          "Enabled faster consumption",
+          "AI Tools, Web App, UX design",
+          "Personal Project",
+        ]
+      ),
+      "loops": ProjectContent(
+        id: "loops",
+        title: "Loops",
+        overview:
+          "A music website exploring interaction and creative coding in Framer.",
+        outcome: [
+          "Interaction, Creative Coding",
+          "Experimental Site",
+        ]
+      ),
+      "taxes": ProjectContent(
+        id: "taxes",
+        title: "Taxes iOS App",
+        overview:
+          "Building an iOS app with AI to handle personal finance and taxes.",
+        outcome: [
+          "Fintech, Personal Finance",
+          "SwiftUI + AI Exploration",
         ]
       ),
     ]

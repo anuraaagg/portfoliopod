@@ -38,22 +38,22 @@ struct DeviceShellView: View {
           .opacity(0.15)
           .ignoresSafeArea()
 
-        // The Physical iPod Model (Centered Classic 6th Gen)
         RealisticIPodShell(
           contentStore: contentStore,
           navigationStack: $navigationStack,
           selectedIndex: $selectedIndex,
           currentMenuItems: currentMenuItems,
-          physics: physics,  // Pass physics object
+          physics: physics,
           onCenterPress: handleCenterPress,
           onMenuPress: handleMenuPress,
           isBooting: $isBooting,
           isPoweredOn: $isPoweredOn,
           stickerStore: stickerStore,
-          motionManager: motionManager  // Pass motion manager
+          motionManager: motionManager
         )
         .frame(width: min(geometry.size.width * 0.9, 360))
-        .aspectRatio(0.597, contentMode: .fit)  // Real iPod Classic Ratio (61.8mm / 103.5mm)
+        .aspectRatio(0.597, contentMode: .fit)  // Authentic 6th Gen Ratio
+        .padding(.top, 60)  // Extra clearance for the top edge
         .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
       }
       .onAppear {
@@ -101,12 +101,28 @@ struct DeviceShellView: View {
     guard !currentMenuItems.isEmpty else { return }
     guard selectedIndex < currentMenuItems.count else { return }
 
-    let selectedItem = currentMenuItems[selectedIndex]
+    // Special handling for Music Library Leaf Selection
+    if navigationStack.last?.payloadID == "library" {
+      let playlists = MusicLibraryManager.shared.playlists
+      if selectedIndex < playlists.count {
+        MusicLibraryManager.shared.playPlaylist(playlists[selectedIndex])
+        // Optionally navigate to "Now Playing"
+        let nowPlayingNode = MenuNode(
+          id: "nowplaying", title: "Now Playing", contentType: .media, payloadID: "nowplaying")
+        withAnimation(.easeOut(duration: 0.2)) {
+          navigationStack.append(nowPlayingNode)
+          selectedIndex = 0
+          physics.reset(to: 0)
+        }
+      }
+      return
+    }
 
     // Navigate into any item (menu with children OR leaf content)
     withAnimation(.easeOut(duration: 0.2)) {
       navigationStack.append(selectedItem)
       selectedIndex = 0
+      physics.reset(to: 0)  // Force physics synchronization
     }
   }
 
@@ -115,6 +131,7 @@ struct DeviceShellView: View {
       withAnimation(.easeOut(duration: 0.2)) {
         navigationStack.removeLast()
         selectedIndex = 0
+        physics.reset(to: 0)  // Force physics synchronization
       }
     }
   }
@@ -137,31 +154,10 @@ struct RealisticIPodShell: View {
     GeometryReader { geo in
       let width = geo.size.width
 
-      ZStack {
-        // Power Button "Outside" (Top Edge)
-        // Simulated as sitting on the top casing
-        RoundedRectangle(cornerRadius: 2)
-          .fill(
-            LinearGradient(
-              colors: [Color(white: 0.25), Color(white: 0.15)],
-              startPoint: .top,
-              endPoint: .bottom
-            )
-          )
-          .frame(width: width * 0.10, height: width * 0.03)  // ~6mm wide, 2mm tall
-          .offset(x: width * 0.25, y: -geo.size.height / 2 - (width * 0.015))  // Top-Right, protruding
-          .onTapGesture {
-            let generator = UIImpactFeedbackGenerator(style: .medium)
-            generator.impactOccurred()
-            withAnimation(.easeInOut(duration: 0.3)) {
-              isPoweredOn.toggle()
-            }
-            if isPoweredOn { isBooting = true }
-          }
-          .zIndex(0)  // Behind the main face plate effectively, or just sitting up top
+      ZStack(alignment: .top) {
 
-        // Main Body (Dark Slate Blue - Modern iPod)
-        RoundedRectangle(cornerRadius: 28)  // Softer, more modern corners
+        // Main Body (Silver/Dark Slate)
+        RoundedRectangle(cornerRadius: width * 0.16)  // Modern softer corners
           .fill(
             LinearGradient(
               stops: [
@@ -175,57 +171,66 @@ struct RealisticIPodShell: View {
               endPoint: .trailing
             )
           )
-          .shadow(color: .black.opacity(0.45), radius: 35, x: 0, y: 20)
-          .shadow(color: .black.opacity(0.45), radius: 35, x: 0, y: 20)
-          // Removed matte finish noise overlay to fix circular artifacts
+          .shadow(color: .black.opacity(0.35), radius: 25, x: 0, y: 15)
           .overlay(
-            // Top/Bottom subtle gradient
             VStack {
               LinearGradient(
-                colors: [Color.black.opacity(0.2), .clear], startPoint: .top, endPoint: .bottom
+                colors: [Color.black.opacity(0.15), .clear], startPoint: .top, endPoint: .bottom
               )
               .frame(height: 25)
               Spacer()
               LinearGradient(
-                colors: [.clear, Color.black.opacity(0.2)], startPoint: .top, endPoint: .bottom
+                colors: [.clear, Color.black.opacity(0.15)], startPoint: .top, endPoint: .bottom
               )
               .frame(height: 25)
             }
-            .clipShape(RoundedRectangle(cornerRadius: 28))
+            .clipShape(RoundedRectangle(cornerRadius: width * 0.16))
           )
           .overlay(
-            // Sticker Layer (On top of shell, below content)
+            // Polished Chrome Frame (The physical rim)
+            RoundedRectangle(cornerRadius: width * 0.16)
+              .strokeBorder(
+                LinearGradient(
+                  colors: [Color(white: 0.95), Color(white: 0.6), Color(white: 0.95)],
+                  startPoint: .topLeading,
+                  endPoint: .bottomTrailing
+                ),
+                lineWidth: 2.5
+              )
+          )
+          .overlay(
+            // Sticker Layer
             StickerLayerView(store: stickerStore)
-              .clipShape(RoundedRectangle(cornerRadius: 28))
+              .clipShape(RoundedRectangle(cornerRadius: width * 0.16))
           )
 
         // Internal Content Area
         VStack(spacing: 0) {
-          // Top Padding (Forehead): ~7mm real world relative
-          Color.clear.frame(height: width * 0.11)
+          // Forehead: Matches Side Bezel (6% of width)
+          Color.clear.frame(height: width * 0.06)
 
-          // Main Control Cluster
+          // Main Control Cluster (Screen + Wheel)
           VStack(spacing: 0) {
             // Screen Cluster
             ZStack {
-              // Bezel (Real width ~84% of device)
-              RoundedRectangle(cornerRadius: 15)  // Slightly tighter corners for realism
-                .fill(Color(white: 0.06))
-                .frame(width: width * 0.84, height: width * 0.65)  // ~4:3 aspectish + bezel
+              // Outer Bezel
+              RoundedRectangle(cornerRadius: width * 0.075)  // More rounded screen corners
+                .fill(Color(white: 0.04))
+                .frame(width: width * 0.88, height: width * 0.70)
                 .overlay(
-                  RoundedRectangle(cornerRadius: 15)
-                    .strokeBorder(Color(white: 0.15), lineWidth: 1.5)
+                  RoundedRectangle(cornerRadius: width * 0.075)
+                    .strokeBorder(Color(white: 0.12), lineWidth: 1.5)
                 )
 
-              // Viewport (2.5" diag -> 0.82 width ratio, actual display)
+              // Viewport
               ScreenView(
                 contentStore: contentStore,
                 navigationStack: $navigationStack,
                 selectedIndex: $selectedIndex,
                 physics: physics
               )
-              .frame(width: width * 0.79, height: width * 0.60)  // LCD Area
-              .cornerRadius(12)
+              .frame(width: width * 0.84, height: width * 0.66)
+              .cornerRadius(width * 0.065)
               .offset(
                 x: CGFloat(motionManager.tilt) * 3.0,
                 y: CGFloat(motionManager.tilt) * 2.0
@@ -239,35 +244,36 @@ struct RealisticIPodShell: View {
                     Color.black
                   }
 
-                  // Inner Shadow
-                  RoundedRectangle(cornerRadius: 12)
+                  // Inner Shadow (Air Gap Depth)
+                  RoundedRectangle(cornerRadius: width * 0.045)
                     .stroke(
                       LinearGradient(
-                        colors: [.black.opacity(0.6), .black.opacity(0.1)],
+                        colors: [.black.opacity(0.8), .black.opacity(0.2)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                       ),
-                      lineWidth: 3
+                      lineWidth: 3.5
                     )
-                    .blur(radius: 1.5)
+                    .blur(radius: 2)
                 }
               )
-              .clipShape(RoundedRectangle(cornerRadius: 12))
+              .clipShape(RoundedRectangle(cornerRadius: width * 0.065))
             }
 
-            // Fixed tight gap (Real world is ~8-10mm, user wants tight 5%)
-            Color.clear.frame(height: width * 0.08)
+            // Gap: 4% of width (Slimmer spacing)
+            Color.clear.frame(height: width * 0.04)
 
-            // Click Wheel (Real: 38.1mm / 61.8mm = 61.6%)
+            // Click Wheel
             ClickWheelView(
               physics: physics,
               onCenterPress: onCenterPress,
               onMenuPress: onMenuPress
             )
-            .frame(width: width * 0.616, height: width * 0.616)
+            .frame(width: width * 0.65, height: width * 0.65)
           }
 
-          Spacer(minLength: width * 0.05)  // Natural Chin
+          // Chin: 4% of width (Slimmer spacing)
+          Color.clear.frame(height: width * 0.04)
         }
       }
     }

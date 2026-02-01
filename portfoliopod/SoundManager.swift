@@ -85,6 +85,7 @@ class SoundManager: ObservableObject {
       playerNode.stop()
     }
 
+    playerNode.volume = Float(SettingsStore.shared.clickVolume)
     playerNode.scheduleBuffer(buffer, at: nil, options: [], completionHandler: nil)
     playerNode.play()
   }

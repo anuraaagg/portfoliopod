@@ -22,11 +22,35 @@ class StickerStore: ObservableObject {
   @Published var stickers: [Sticker] = []
 
   init() {
-    // Default stickers (Placeholders until user provides PNGs)
-    // We can add some sample stickers if assets are available, otherwise empty.
-    // stickers = [
-    //   Sticker(imageName: "sticker_apple", positionX: 0.5, positionY: 0.8, scale: 0.1, rotationDegrees: 0)
-    // ]
+    // Randomized placements for "Old Retro Tech" vibe
+    // Coordinates are Relative 0-1
+    stickers = [
+      Sticker(
+        imageName:
+          "/Users/anuragsingh/Documents/portfoliopod/portfoliopod/Stickers/sticker_graffiti.png",
+        positionX: 0.2, positionY: 0.85, scale: 0.45, rotationDegrees: -15
+      ),
+      Sticker(
+        imageName:
+          "/Users/anuragsingh/Documents/portfoliopod/portfoliopod/Stickers/sticker_circle_crew.png",
+        positionX: 0.85, positionY: 0.75, scale: 0.35, rotationDegrees: 12
+      ),
+      Sticker(
+        imageName:
+          "/Users/anuragsingh/Documents/portfoliopod/portfoliopod/Stickers/sticker_character_1.png",
+        positionX: 0.1, positionY: 0.15, scale: 0.5, rotationDegrees: -5
+      ),
+      Sticker(
+        imageName:
+          "/Users/anuragsingh/Documents/portfoliopod/portfoliopod/Stickers/sticker_luffy.png",
+        positionX: 0.9, positionY: 0.2, scale: 0.4, rotationDegrees: 20
+      ),
+      Sticker(
+        imageName:
+          "/Users/anuragsingh/Documents/portfoliopod/portfoliopod/Stickers/sticker_helmet_swords.png",
+        positionX: 0.5, positionY: 0.92, scale: 0.4, rotationDegrees: -5
+      ),
+    ]
   }
 
   func addSticker(_ sticker: Sticker) {
@@ -45,9 +69,17 @@ struct StickerLayerView: View {
     GeometryReader { geometry in
       ZStack {
         ForEach(store.stickers) { sticker in
-          // Try to load user provided image, fallback to system image for testing if missing
-          if UIImage(named: sticker.imageName) != nil {
-            Image(sticker.imageName)
+          // Try to load from absolute path first, then from assets
+          let uiImage: UIImage? = {
+            if sticker.imageName.hasPrefix("/") {
+              return UIImage(contentsOfFile: sticker.imageName)
+            } else {
+              return UIImage(named: sticker.imageName)
+            }
+          }()
+
+          if let uiImage = uiImage {
+            Image(uiImage: uiImage)
               .resizable()
               .scaledToFit()
               .frame(width: geometry.size.width * sticker.scale)
@@ -56,19 +88,31 @@ struct StickerLayerView: View {
                 x: geometry.size.width * sticker.positionX,
                 y: geometry.size.height * sticker.positionY
               )
-              .shadow(color: .black.opacity(0.3), radius: 2, x: 1, y: 1)  // Realistic thickness shadow
+              // Retro tech style: Subtle multiply-ish blend and realistic shadow
+              .shadow(color: .black.opacity(0.4), radius: 3, x: 2, y: 2)
+              .overlay(
+                // Noise / Worn texture overlay
+                ZStack {
+                  Color.black.opacity(0.05)
+                  ForEach(0..<5) { _ in
+                    Rectangle()
+                      .fill(Color.white.opacity(0.05))
+                      .frame(width: 1, height: 1)
+                      .offset(x: CGFloat.random(in: -20...20), y: CGFloat.random(in: -20...20))
+                  }
+                }
+                .blendMode(.overlay)
+                .allowsHitTesting(false)
+              )
           } else {
             // Fallback for testing/debugging
-            Image(systemName: "star.fill")  // Placeholder
-              .font(.system(size: 50))
-              .foregroundColor(.yellow)
-              .frame(width: geometry.size.width * sticker.scale)
-              .rotationEffect(.degrees(sticker.rotationDegrees))
+            Image(systemName: "questionmark.square.dashed")
+              .font(.system(size: 30))
+              .foregroundColor(.gray)
               .position(
                 x: geometry.size.width * sticker.positionX,
                 y: geometry.size.height * sticker.positionY
               )
-              .opacity(0.8)
           }
         }
       }

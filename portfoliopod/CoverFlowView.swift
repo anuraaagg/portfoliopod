@@ -42,26 +42,24 @@ struct CoverFlowItem: View {
     let isSelected = index == selectedIndex
 
     ZStack {
-      // Placeholder "Album" Art
-      RoundedRectangle(cornerRadius: 4)
-        .fill(
-          LinearGradient(
-            colors: [Color.blue.opacity(0.8), Color.blue],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-          )
+      // Placeholder "Album" Art (Brutalist style)
+      Rectangle()
+        .fill(Color.black)
+        .overlay(
+          Rectangle()
+            .stroke(isSelected ? Color.red : Color.gray, lineWidth: isSelected ? 2 : 1)
         )
         .overlay(
-          VStack {
-            Image(systemName: "photo.on.rectangle.angled")
-              .font(.system(size: 40))
-              .foregroundColor(.white.opacity(0.6))
+          VStack(spacing: 12) {
+            Image(systemName: "photo.fill")
+              .font(.system(size: 30))
+              .foregroundColor(isSelected ? .red : .gray)
 
-            Text(item.title)
-              .font(.system(size: 10, weight: .bold))
+            Text(item.title.uppercased())
+              .font(.system(size: 8, weight: .bold, design: .monospaced))
               .foregroundColor(.white)
               .multilineTextAlignment(.center)
-              .padding(.top, 4)
+              .padding(.horizontal, 8)
           }
         )
     }
