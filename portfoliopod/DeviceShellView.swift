@@ -69,7 +69,7 @@ struct DeviceShellView: View {
       .onChange(of: musicManager.playlists.count) { oldCount, newCount in
         updatePhysicsCount()
       }
-      .onChange(of: navigationStack) { oldStack, newStack in
+      .onChange(of: navigationStack.last?.id) { oldID, newID in
         updatePhysicsCount()
       }
       .onChange(of: physics.selectionIndex) { oldIndex, newIndex in
@@ -357,3 +357,4 @@ struct ScreenGlassOverlay: View {
     }
   }
 }
+

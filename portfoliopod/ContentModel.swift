@@ -19,7 +19,7 @@ enum ContentType: String, Codable {
   case menu
 }
 
-struct MenuNode: Identifiable, Codable {
+struct MenuNode: Identifiable, Codable, Equatable {
   let id: String
   let title: String
   var children: [MenuNode]?

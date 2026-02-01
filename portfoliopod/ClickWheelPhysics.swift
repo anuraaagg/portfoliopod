@@ -167,28 +167,25 @@ class ClickWheelPhysics: ObservableObject {
   }
 
   private func processBuffer() {
-    // iPod Acceleration Logic: If spinning fast, multiplier increases
-    let absVelocity = abs(angularVelocity)
-    let accelerationMultiplier = absVelocity > 5.0 ? (1.0 + (absVelocity - 5.0) * 0.2) : 1.0
-    let effectiveThreshold = degreesPerStep / accelerationMultiplier
+    // Authentic iPod behavior: advance a single item per threshold, no acceleration-based multi-steps
+    let effectiveThreshold = degreesPerStep
 
     if abs(rotationBuffer) >= effectiveThreshold {
-      let steps = Int(rotationBuffer / effectiveThreshold)
+      let step = rotationBuffer > 0 ? 1 : -1
 
       // Update index with bounds checking
-      let proposedIndex = selectionIndex + steps
+      let proposedIndex = selectionIndex + step
       let clampedIndex = max(0, min(proposedIndex, numberOfItems - 1))
 
       if clampedIndex != selectionIndex {
         selectionIndex = clampedIndex
         triggerTickSensory()
       } else {
-        // AUTHENTIC BEHAVIOR: If we hit the end of the list,
-        // drain the buffer so it doesn't "wind up" against the wall.
+        // If we hit the end of the list, drain the buffer so it doesn't wind up
         rotationBuffer = 0
       }
 
-      rotationBuffer -= Double(steps) * effectiveThreshold
+      rotationBuffer -= Double(step) * effectiveThreshold
     }
   }
 
@@ -211,3 +208,4 @@ class ClickWheelPhysics: ObservableObject {
     centerPressSubject.send()
   }
 }
+
