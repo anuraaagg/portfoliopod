@@ -13,6 +13,7 @@ struct DeviceShellView: View {
   @StateObject private var motionManager = MotionManager()
   @StateObject private var physics = ClickWheelPhysics(numberOfItems: 0)
   @StateObject private var stickerStore = StickerStore()  // Sticker Manager
+  @ObservedObject private var musicManager = MusicLibraryManager.shared
   @State private var navigationStack: [MenuNode] = []
   @State private var selectedIndex: Int = 0
   @State private var isBooting: Bool = true  // Boot animation state
@@ -63,7 +64,13 @@ struct DeviceShellView: View {
         physics.numberOfItems = currentMenuItems.count
       }
       .onChange(of: currentMenuItems.count) { oldCount, newCount in
-        physics.numberOfItems = newCount
+        updatePhysicsCount()
+      }
+      .onChange(of: musicManager.playlists.count) { oldCount, newCount in
+        updatePhysicsCount()
+      }
+      .onChange(of: navigationStack) { oldStack, newStack in
+        updatePhysicsCount()
       }
       .onChange(of: physics.selectionIndex) { oldIndex, newIndex in
         selectedIndex = newIndex
@@ -83,6 +90,14 @@ struct DeviceShellView: View {
       navigationStack.isEmpty
       ? (contentStore.rootMenu.children ?? []) : (navigationStack.last?.children ?? [])
     return items
+  }
+
+  private func updatePhysicsCount() {
+    if navigationStack.last?.payloadID == "library" {
+      physics.numberOfItems = musicManager.playlists.count
+    } else {
+      physics.numberOfItems = currentMenuItems.count
+    }
   }
 
   private func shuffleContent() {
