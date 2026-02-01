@@ -37,8 +37,10 @@ class MusicLibraryManager: ObservableObject {
 
   func fetchPlaylists() {
     let query = MPMediaQuery.playlists()
-    if let collections = query.collections {
-      self.playlists = collections
+    DispatchQueue.main.async {
+      if let collections = query.collections {
+        self.playlists = collections
+      }
     }
   }
 

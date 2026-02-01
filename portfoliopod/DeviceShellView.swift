@@ -101,6 +101,8 @@ struct DeviceShellView: View {
     guard !currentMenuItems.isEmpty else { return }
     guard selectedIndex < currentMenuItems.count else { return }
 
+    let selectedItem = currentMenuItems[selectedIndex]
+
     // Special handling for Music Library Leaf Selection
     if navigationStack.last?.payloadID == "library" {
       let playlists = MusicLibraryManager.shared.playlists

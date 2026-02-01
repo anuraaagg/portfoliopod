@@ -105,7 +105,8 @@ class ContentStore: ObservableObject {
           id: "music-library",
           title: "music",
           contentType: .media,
-          payloadID: "library"
+          payloadID: "library",
+          imageName: "preview_music"
         ),
         MenuNode(
           id: "works",
@@ -124,7 +125,8 @@ class ContentStore: ObservableObject {
             MenuNode(
               id: "taxes", title: "Taxes iOS App", contentType: .project, payloadID: "taxes"),
           ],
-          contentType: .menu
+          contentType: .menu,
+          imageName: "preview_hobby"
         ),
         MenuNode(
           id: "about",
@@ -173,13 +175,15 @@ class ContentStore: ObservableObject {
               id: "interaction", title: "Micro-Interactions", contentType: .writing,
               payloadID: "interaction"),
           ],
-          contentType: .menu
+          contentType: .menu,
+          imageName: "preview_writings"
         ),
         MenuNode(
           id: "resume",
           title: "resume",
           contentType: .text,
-          payloadID: "resume"
+          payloadID: "resume",
+          imageName: "preview_social"
         ),
         MenuNode(
           id: "extras",

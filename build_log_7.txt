@@ -1,0 +1,112 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -scheme portfoliopod -destination "generic/platform=iOS Simulator" build
+
+2026-02-01 12:12:47.153 xcodebuild[54718:3434125] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (1 target)
+    Target 'portfoliopod' in project 'portfoliopod' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.1.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --print-asset-tag-combinations --output-format xml1 /Users/anuragsingh/Documents/portfoliopod/portfoliopod/Assets.xcassets
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --version --output-format xml1
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+Build description signature: 863a8c59e16d20d0c2480d08c36527cb
+Build description path: /Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/XCBuildData/863a8c59e16d20d0c2480d08c36527cb.xcbuilddata
+ClangStatCache /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.1.sdk /Users/anuragsingh/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator26.1-23B77-3885c01c3e6b6a337905948deab2002e90cf18a4295e390e64c810bc6bd7acbc.sdkstatcache
+    cd /Users/anuragsingh/Documents/portfoliopod/portfoliopod.xcodeproj
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.1.sdk -o /Users/anuragsingh/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator26.1-23B77-3885c01c3e6b6a337905948deab2002e90cf18a4295e390e64c810bc6bd7acbc.sdkstatcache
+
+note: Disabling hardened runtime with ad-hoc codesigning. (in target 'portfoliopod' from project 'portfoliopod')
+SwiftDriver portfoliopod normal x86_64 com.apple.xcode.tools.swift.compiler (in target 'portfoliopod' from project 'portfoliopod')
+    cd /Users/anuragsingh/Documents/portfoliopod
+    builtin-SwiftDriver -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name portfoliopod -Onone -enforce-exclusivity\=checked @/Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/portfoliopod.build/Debug-iphonesimulator/portfoliopod.build/Objects-normal/x86_64/portfoliopod.SwiftFileList -DDEBUG -default-isolation\=MainActor -enable-bare-slash-regex -enable-upcoming-feature DisableOutwardActorInference -enable-upcoming-feature InferSendableFromCaptures -enable-upcoming-feature GlobalActorIsolatedTypesUsability -enable-upcoming-feature MemberImportVisibility -enable-upcoming-feature InferIsolatedConformances -enable-upcoming-feature NonisolatedNonsendingByDefault -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.1.sdk -target x86_64-apple-ios26.1-simulator -g -module-cache-path /Users/anuragsingh/Library/Developer/Xcode/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Products/Debug-iphonesimulator -F /Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Products/Debug-iphonesimulator -emit-localized-strings -emit-localized-strings-path /Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/portfoliopod.build/Debug-iphonesimulator/portfoliopod.build/Objects-normal/x86_64 -c -j8 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/anuragsingh/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator26.1-23B77-3885c01c3e6b6a337905948deab2002e90cf18a4295e390e64c810bc6bd7acbc.sdkstatcache -output-file-map /Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/portfoliopod.build/Debug-iphonesimulator/portfoliopod.build/Objects-normal/x86_64/portfoliopod-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/anuragsingh/Library/Developer/Xcode/DerivedData/ModuleCache.noindex -sdk-module-cache-path /Users/anuragsingh/Library/Developer/Xcode/DerivedData/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/portfoliopod.build/Debug-iphonesimulator/portfoliopod.build/Objects-normal/x86_64/portfoliopod.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/anuragsingh/Library/Developer/Xcode/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/portfoliopod.build/Debug-iphonesimulator/portfoliopod.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/portfoliopod.build/Debug-iphonesimulator/portfoliopod.build/Objects-normal/x86_64/portfoliopod_const_extract_protocols.json -Xcc -iquote -Xcc /Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/portfoliopod.build/Debug-iphonesimulator/portfoliopod.build/portfoliopod-generated-files.hmap -Xcc -I/Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/portfoliopod.build/Debug-iphonesimulator/portfoliopod.build/portfoliopod-own-target-headers.hmap -Xcc -I/Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/portfoliopod.build/Debug-iphonesimulator/portfoliopod.build/portfoliopod-all-target-headers.hmap -Xcc -iquote -Xcc /Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/portfoliopod.build/Debug-iphonesimulator/portfoliopod.build/portfoliopod-project-headers.hmap -Xcc -I/Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/portfoliopod.build/Debug-iphonesimulator/portfoliopod.build/DerivedSources-normal/x86_64 -Xcc -I/Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/portfoliopod.build/Debug-iphonesimulator/portfoliopod.build/DerivedSources/x86_64 -Xcc -I/Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/portfoliopod.build/Debug-iphonesimulator/portfoliopod.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/portfoliopod.build/Debug-iphonesimulator/portfoliopod.build/Objects-normal/x86_64/portfoliopod-Swift.h -working-directory /Users/anuragsingh/Documents/portfoliopod -experimental-emit-module-separately -disable-cmo
+/Users/anuragsingh/Documents/portfoliopod/portfoliopod/ContentModel.swift:176:22: error: expected ',' separator
+          contentType: .menu,
+                     ^
+                     ,
+/Users/anuragsingh/Documents/portfoliopod/portfoliopod/ContentModel.swift:176:22: error: expected expression in container literal
+          contentType: .menu,
+                     ^
+/Users/anuragsingh/Documents/portfoliopod/portfoliopod/ContentModel.swift:217:6: error: expected ']' in container literal expression
+    )
+     ^
+/Users/anuragsingh/Documents/portfoliopod/portfoliopod/ContentModel.swift:103:17: note: to match this opening '['
+      children: [
+                ^
+/Users/anuragsingh/Documents/portfoliopod/portfoliopod/ContentModel.swift:176:22: error: expected ',' separator
+          contentType: .menu,
+                     ^
+                     ,
+/Users/anuragsingh/Documents/portfoliopod/portfoliopod/ContentModel.swift:176:22: error: expected expression in container literal
+          contentType: .menu,
+                     ^
+/Users/anuragsingh/Documents/portfoliopod/portfoliopod/ContentModel.swift:217:6: error: expected ']' in container literal expression
+    )
+     ^
+/Users/anuragsingh/Documents/portfoliopod/portfoliopod/ContentModel.swift:103:17: note: to match this opening '['
+      children: [
+                ^
+/Users/anuragsingh/Documents/portfoliopod/portfoliopod/ContentModel.swift:176:22: error: Expected ',' separator
+          contentType: .menu,
+                     ^
+                     , (in target 'portfoliopod' from project 'portfoliopod')
+/Users/anuragsingh/Documents/portfoliopod/portfoliopod/ContentModel.swift:176:22: error: Expected expression in container literal
+          contentType: .menu,
+                     ^ (in target 'portfoliopod' from project 'portfoliopod')
+/Users/anuragsingh/Documents/portfoliopod/portfoliopod/ContentModel.swift:217:6: error: Expected ']' in container literal expression
+    )
+     ^ (in target 'portfoliopod' from project 'portfoliopod')
+/Users/anuragsingh/Documents/portfoliopod/portfoliopod/ContentModel.swift:103:17: note: To match this opening '['
+      children: [
+                ^ (in target 'portfoliopod' from project 'portfoliopod')
+
+SwiftDriver portfoliopod normal arm64 com.apple.xcode.tools.swift.compiler (in target 'portfoliopod' from project 'portfoliopod')
+    cd /Users/anuragsingh/Documents/portfoliopod
+    builtin-SwiftDriver -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name portfoliopod -Onone -enforce-exclusivity\=checked @/Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/portfoliopod.build/Debug-iphonesimulator/portfoliopod.build/Objects-normal/arm64/portfoliopod.SwiftFileList -DDEBUG -default-isolation\=MainActor -enable-bare-slash-regex -enable-upcoming-feature DisableOutwardActorInference -enable-upcoming-feature InferSendableFromCaptures -enable-upcoming-feature GlobalActorIsolatedTypesUsability -enable-upcoming-feature MemberImportVisibility -enable-upcoming-feature InferIsolatedConformances -enable-upcoming-feature NonisolatedNonsendingByDefault -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.1.sdk -target arm64-apple-ios26.1-simulator -g -module-cache-path /Users/anuragsingh/Library/Developer/Xcode/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Products/Debug-iphonesimulator -F /Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Products/Debug-iphonesimulator -emit-localized-strings -emit-localized-strings-path /Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/portfoliopod.build/Debug-iphonesimulator/portfoliopod.build/Objects-normal/arm64 -c -j8 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/anuragsingh/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator26.1-23B77-3885c01c3e6b6a337905948deab2002e90cf18a4295e390e64c810bc6bd7acbc.sdkstatcache -output-file-map /Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/portfoliopod.build/Debug-iphonesimulator/portfoliopod.build/Objects-normal/arm64/portfoliopod-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/anuragsingh/Library/Developer/Xcode/DerivedData/ModuleCache.noindex -sdk-module-cache-path /Users/anuragsingh/Library/Developer/Xcode/DerivedData/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/portfoliopod.build/Debug-iphonesimulator/portfoliopod.build/Objects-normal/arm64/portfoliopod.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/anuragsingh/Library/Developer/Xcode/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/portfoliopod.build/Debug-iphonesimulator/portfoliopod.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/portfoliopod.build/Debug-iphonesimulator/portfoliopod.build/Objects-normal/arm64/portfoliopod_const_extract_protocols.json -Xcc -iquote -Xcc /Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/portfoliopod.build/Debug-iphonesimulator/portfoliopod.build/portfoliopod-generated-files.hmap -Xcc -I/Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/portfoliopod.build/Debug-iphonesimulator/portfoliopod.build/portfoliopod-own-target-headers.hmap -Xcc -I/Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/portfoliopod.build/Debug-iphonesimulator/portfoliopod.build/portfoliopod-all-target-headers.hmap -Xcc -iquote -Xcc /Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/portfoliopod.build/Debug-iphonesimulator/portfoliopod.build/portfoliopod-project-headers.hmap -Xcc -I/Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/portfoliopod.build/Debug-iphonesimulator/portfoliopod.build/DerivedSources-normal/arm64 -Xcc -I/Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/portfoliopod.build/Debug-iphonesimulator/portfoliopod.build/DerivedSources/arm64 -Xcc -I/Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/portfoliopod.build/Debug-iphonesimulator/portfoliopod.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/portfoliopod.build/Debug-iphonesimulator/portfoliopod.build/Objects-normal/arm64/portfoliopod-Swift.h -working-directory /Users/anuragsingh/Documents/portfoliopod -experimental-emit-module-separately -disable-cmo
+/Users/anuragsingh/Documents/portfoliopod/portfoliopod/ContentModel.swift:176:22: error: Expected ',' separator
+          contentType: .menu,
+                     ^
+                     , (in target 'portfoliopod' from project 'portfoliopod')
+/Users/anuragsingh/Documents/portfoliopod/portfoliopod/ContentModel.swift:176:22: error: Expected expression in container literal
+          contentType: .menu,
+                     ^ (in target 'portfoliopod' from project 'portfoliopod')
+/Users/anuragsingh/Documents/portfoliopod/portfoliopod/ContentModel.swift:217:6: error: Expected ']' in container literal expression
+    )
+     ^ (in target 'portfoliopod' from project 'portfoliopod')
+/Users/anuragsingh/Documents/portfoliopod/portfoliopod/ContentModel.swift:103:17: note: To match this opening '['
+      children: [
+                ^ (in target 'portfoliopod' from project 'portfoliopod')
+
+ProcessInfoPlistFile /Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Products/Debug-iphonesimulator/portfoliopod.app/Info.plist /Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/portfoliopod.build/Debug-iphonesimulator/portfoliopod.build/empty-portfoliopod.plist (in target 'portfoliopod' from project 'portfoliopod')
+    cd /Users/anuragsingh/Documents/portfoliopod
+    builtin-infoPlistUtility /Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/portfoliopod.build/Debug-iphonesimulator/portfoliopod.build/empty-portfoliopod.plist -producttype com.apple.product-type.application -genpkginfo /Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Products/Debug-iphonesimulator/portfoliopod.app/PkgInfo -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile /Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Intermediates.noindex/portfoliopod.build/Debug-iphonesimulator/portfoliopod.build/assetcatalog_generated_info.plist -o /Users/anuragsingh/Library/Developer/Xcode/DerivedData/portfoliopod-asstkbbzdqsomaejgewbusfnpach/Build/Products/Debug-iphonesimulator/portfoliopod.app/Info.plist
+
+** BUILD FAILED **
+
+
+The following build commands failed:
+	SwiftDriver portfoliopod normal x86_64 com.apple.xcode.tools.swift.compiler (in target 'portfoliopod' from project 'portfoliopod')
+	SwiftDriver portfoliopod normal arm64 com.apple.xcode.tools.swift.compiler (in target 'portfoliopod' from project 'portfoliopod')
+	Building project portfoliopod with scheme portfoliopod
+(3 failures)

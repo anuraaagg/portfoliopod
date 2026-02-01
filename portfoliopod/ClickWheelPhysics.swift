@@ -34,8 +34,8 @@ class ClickWheelPhysics: ObservableObject {
     }
   }
 
-  // Authentic Click Wheel Sensitivity: ~18-24 degrees per step
-  let degreesPerStep: Double = 22.0
+  // Authentic Click Wheel Sensitivity: Updated for better stability
+  let degreesPerStep: Double = 30.0
 
   // Performance Optimization: Pre-initialize haptic generator
   private let tickGenerator = UIImpactFeedbackGenerator(style: .light)
@@ -105,7 +105,7 @@ class ClickWheelPhysics: ObservableObject {
       rotationBuffer += deltaDegrees
 
       // Update scroll offset for continuous scrolling
-      scrollOffset -= CGFloat(deltaDegrees * 2.5)  // Adjust sensitivity for content
+      scrollOffset -= CGFloat(deltaDegrees * 1.5)  // Reduced sensitivity
       processBuffer()
 
       currentAngle += angularMomentum
@@ -146,7 +146,7 @@ class ClickWheelPhysics: ObservableObject {
     // Update relative buffer (in degrees)
     let deltaDegrees = (deltaAngle * 180.0 / .pi)
     rotationBuffer += deltaDegrees
-    scrollOffset -= CGFloat(deltaDegrees * 2.5)  // Vertical scroll logic
+    scrollOffset -= CGFloat(deltaDegrees * 1.5)  // Reduced sensitivity
 
     processBuffer()
 

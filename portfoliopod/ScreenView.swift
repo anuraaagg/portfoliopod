@@ -6,6 +6,7 @@
 //
 
 import Combine
+import MediaPlayer
 import SwiftUI
 
 struct ScreenView: View {
@@ -625,18 +626,17 @@ struct MusicLibraryView: View {
   var body: some View {
     VStack(spacing: 0) {
       if musicManager.permissionStatus == .authorized {
-        let playlists = musicManager.playlists
         VStack(spacing: 0) {
-          ForEach(Array(playlists.enumerated()), id: \.element.persistentID) { index, playlist in
-            HStack {
-              Text(index == selectedIndex ? "[ \(playlist.name ?? "Unknown") ]" : "  \(playlist.name ?? "Unknown")")
-                .font(.system(size: 15, weight: index == selectedIndex ? .bold : .medium, design: .monospaced))
-                .foregroundColor(index == selectedIndex ? .white : .black)
-              Spacer()
+          let playlists = musicManager.playlists
+          if playlists.isEmpty {
+            Text("[ NO PLAYLISTS FOUND ]")
+              .font(.system(size: 14, design: .monospaced))
+              .foregroundColor(.gray)
+              .padding(.top, 40)
+          } else {
+            ForEach(0..<playlists.count, id: \.self) { index in
+              playlistRow(index: index, playlist: playlists[index])
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .background(index == selectedIndex ? SettingsStore.shared.theme.accentColor : Color.clear)
           }
         }
       } else {
@@ -653,7 +653,26 @@ struct MusicLibraryView: View {
       }
     }
     .onAppear {
-        musicManager.checkPermissions()
+      musicManager.checkPermissions()
     }
+  }
+
+  private func playlistRow(index: Int, playlist: MPMediaItemCollection) -> some View {
+    let name = playlist.value(forProperty: MPMediaPlaylistPropertyName) as? String ?? "Unknown"
+    return HStack {
+      Text(
+        index == selectedIndex
+          ? "[ \(name) ]"
+          : "  \(name)"
+      )
+      .font(
+        .system(size: 15, weight: index == selectedIndex ? .bold : .medium, design: .monospaced)
+      )
+      .foregroundColor(index == selectedIndex ? .white : .black)
+      Spacer()
+    }
+    .padding(.horizontal, 16)
+    .padding(.vertical, 10)
+    .background(index == selectedIndex ? SettingsStore.shared.theme.accentColor : Color.clear)
   }
 }
