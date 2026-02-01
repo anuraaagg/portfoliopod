@@ -23,31 +23,26 @@ class StickerStore: ObservableObject {
 
   init() {
     // Randomized placements for "Old Retro Tech" vibe
-    // Coordinates are Relative 0-1
+    // Using asset names for device compatibility
     stickers = [
       Sticker(
-        imageName:
-          "/Users/anuragsingh/Documents/portfoliopod/portfoliopod/Stickers/sticker_graffiti.png",
+        imageName: "sticker_graffiti",
         positionX: 0.2, positionY: 0.85, scale: 0.45, rotationDegrees: -15
       ),
       Sticker(
-        imageName:
-          "/Users/anuragsingh/Documents/portfoliopod/portfoliopod/Stickers/sticker_circle_crew.png",
+        imageName: "sticker_circle_crew",
         positionX: 0.85, positionY: 0.75, scale: 0.35, rotationDegrees: 12
       ),
       Sticker(
-        imageName:
-          "/Users/anuragsingh/Documents/portfoliopod/portfoliopod/Stickers/sticker_character_1.png",
+        imageName: "sticker_character_1",
         positionX: 0.1, positionY: 0.15, scale: 0.5, rotationDegrees: -5
       ),
       Sticker(
-        imageName:
-          "/Users/anuragsingh/Documents/portfoliopod/portfoliopod/Stickers/sticker_luffy.png",
+        imageName: "sticker_luffy",
         positionX: 0.9, positionY: 0.2, scale: 0.4, rotationDegrees: 20
       ),
       Sticker(
-        imageName:
-          "/Users/anuragsingh/Documents/portfoliopod/portfoliopod/Stickers/sticker_helmet_swords.png",
+        imageName: "sticker_helmet_swords",
         positionX: 0.5, positionY: 0.92, scale: 0.4, rotationDegrees: -5
       ),
     ]
@@ -69,14 +64,8 @@ struct StickerLayerView: View {
     GeometryReader { geometry in
       ZStack {
         ForEach(store.stickers) { sticker in
-          // Try to load from absolute path first, then from assets
-          let uiImage: UIImage? = {
-            if sticker.imageName.hasPrefix("/") {
-              return UIImage(contentsOfFile: sticker.imageName)
-            } else {
-              return UIImage(named: sticker.imageName)
-            }
-          }()
+          // Load from assets (named) or bundle
+          let uiImage: UIImage? = UIImage(named: sticker.imageName)
 
           if let uiImage = uiImage {
             Image(uiImage: uiImage)

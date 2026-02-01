@@ -126,7 +126,7 @@ class ContentStore: ObservableObject {
               id: "taxes", title: "Taxes iOS App", contentType: .project, payloadID: "taxes"),
           ],
           contentType: .menu,
-          imageName: "preview_hobby"
+          imageName: "preview_work"
         ),
         MenuNode(
           id: "about",
@@ -176,14 +176,14 @@ class ContentStore: ObservableObject {
               payloadID: "interaction"),
           ],
           contentType: .menu,
-          imageName: "preview_writings"
+          imageName: "preview_musings"
         ),
         MenuNode(
           id: "resume",
           title: "resume",
           contentType: .text,
           payloadID: "resume",
-          imageName: "preview_social"
+          imageName: "preview_resume"
         ),
         MenuNode(
           id: "extras",
