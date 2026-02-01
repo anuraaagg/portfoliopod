@@ -46,6 +46,8 @@ struct DeviceShellView: View {
           physics: physics,
           onCenterPress: handleCenterPress,
           onMenuPress: handleMenuPress,
+          onNextPress: handleNextPress,
+          onPrevPress: handlePrevPress,
           isBooting: $isBooting,
           isPoweredOn: $isPoweredOn,
           stickerStore: stickerStore,
@@ -137,6 +139,24 @@ struct DeviceShellView: View {
       }
     }
   }
+
+  private func handleNextPress() {
+    adjustSetting(delta: 0.1)
+  }
+
+  private func handlePrevPress() {
+    adjustSetting(delta: -0.1)
+  }
+
+  private func adjustSetting(delta: Double) {
+    let lastID = navigationStack.last?.id ?? ""
+    if lastID == "haptics" {
+      SettingsStore.shared.hapticIntensity = max(
+        0, min(1, SettingsStore.shared.hapticIntensity + delta))
+    } else if lastID == "clicker" {
+      SettingsStore.shared.clickVolume = max(0, min(1, SettingsStore.shared.clickVolume + delta))
+    }
+  }
 }
 
 struct RealisticIPodShell: View {
@@ -147,6 +167,8 @@ struct RealisticIPodShell: View {
   @ObservedObject var physics: ClickWheelPhysics  // Accept physics object
   let onCenterPress: () -> Void
   let onMenuPress: () -> Void
+  let onNextPress: () -> Void
+  let onPrevPress: () -> Void
   @Binding var isBooting: Bool
   @Binding var isPoweredOn: Bool
   @ObservedObject var stickerStore: StickerStore
@@ -269,7 +291,9 @@ struct RealisticIPodShell: View {
             ClickWheelView(
               physics: physics,
               onCenterPress: onCenterPress,
-              onMenuPress: onMenuPress
+              onMenuPress: onMenuPress,
+              onNextPress: onNextPress,
+              onPrevPress: onPrevPress
             )
             .frame(width: width * 0.65, height: width * 0.65)
           }

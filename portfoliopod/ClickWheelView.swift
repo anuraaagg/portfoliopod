@@ -11,6 +11,8 @@ struct ClickWheelView: View {
   @ObservedObject var physics: ClickWheelPhysics  // Accept injected physics
   let onCenterPress: () -> Void
   let onMenuPress: () -> Void
+  let onNextPress: () -> Void
+  let onPrevPress: () -> Void
 
   @State private var isDragging: Bool = false
 
@@ -111,6 +113,10 @@ struct ClickWheelView: View {
 
                     if normalizedAngle > 5.5 || normalizedAngle < 0.7 {
                       onMenuPress()
+                    } else if normalizedAngle > 0.8 && normalizedAngle < 2.3 {
+                      onNextPress()
+                    } else if normalizedAngle > 4.0 && normalizedAngle < 5.4 {
+                      onPrevPress()
                     }
                   }
 

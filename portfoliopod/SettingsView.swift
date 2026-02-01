@@ -67,6 +67,7 @@ struct SettingsView: View {
 
           Slider(value: $settings.hapticIntensity, in: 0...1)
             .accentColor(.red)
+            .allowsHitTesting(false)  // Disable touch per user request
         }
 
       case .clicker:
@@ -76,6 +77,7 @@ struct SettingsView: View {
 
           Slider(value: $settings.clickVolume, in: 0...1)
             .accentColor(.red)
+            .allowsHitTesting(false)  // Disable touch per user request
         }
 
       case .legal:
