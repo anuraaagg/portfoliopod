@@ -117,26 +117,17 @@ struct DeviceShellView: View {
     }
   }
 
-  private func handleCenterPress() {
-    // If inside Music Library, we might have empty currentMenuItems (leaf node),
-    // but valid playlists. So we skip the guard check if in library mode.
-    if navigationStack.last?.payloadID == "library" {
-      // Proceed to music handling logic below
-    } else {
-      guard !currentMenuItems.isEmpty else { return }
-      guard selectedIndex < currentMenuItems.count else { return }
-    }
-
-    let selectedItem = currentMenuItems[selectedIndex]
-
     // Special handling for Music Library Leaf Selection
     if navigationStack.last?.payloadID == "library" {
       let playlists = MusicLibraryManager.shared.playlists
+      // Ensure we don't crash if playlist is empty or index is out of bounds
       if selectedIndex < playlists.count {
         MusicLibraryManager.shared.playPlaylist(playlists[selectedIndex])
-        // Optionally navigate to "Now Playing"
+        
+        // Navigate to "Now Playing"
         let nowPlayingNode = MenuNode(
           id: "nowplaying", title: "Now Playing", contentType: .media, payloadID: "nowplaying")
+          
         withAnimation(.easeOut(duration: 0.2)) {
           navigationStack.append(nowPlayingNode)
           selectedIndex = 0
@@ -145,6 +136,12 @@ struct DeviceShellView: View {
       }
       return
     }
+
+    // Standard Menu Navigation
+    guard !currentMenuItems.isEmpty else { return }
+    guard selectedIndex < currentMenuItems.count else { return }
+
+    let selectedItem = currentMenuItems[selectedIndex]
 
     // Navigate into any item (menu with children OR leaf content)
     withAnimation(.easeOut(duration: 0.2)) {
