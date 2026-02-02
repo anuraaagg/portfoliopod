@@ -20,8 +20,8 @@ class ClickWheelPhysics: ObservableObject {
   @Published var scrollOffset: CGFloat = 0  // Added for content scrolling
 
   // Configuration
-  let inertia: Double = 0.85
-  let friction: Double = 0.92
+  let inertia: Double = 0.80  // Reduced from 0.85 (less initial throw weight)
+  let friction: Double = 0.82  // Reduced from 0.92 (stops much faster)
 
   // Interaction state
   @Published var isDragging: Bool = false
@@ -96,7 +96,8 @@ class ClickWheelPhysics: ObservableObject {
     guard !isDragging else { return }
 
     // Apply momentum with friction
-    if abs(angularMomentum) > 0.0001 {
+    // Cutoff increased to 0.005 to prevent drift
+    if abs(angularMomentum) > 0.005 {
       angularMomentum *= friction
 
       // Update buffer from momentum
@@ -208,4 +209,3 @@ class ClickWheelPhysics: ObservableObject {
     centerPressSubject.send()
   }
 }
-

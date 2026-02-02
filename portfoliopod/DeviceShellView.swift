@@ -93,9 +93,12 @@ struct DeviceShellView: View {
   }
 
   private func updatePhysicsCount() {
+    print("DEBUG: updatePhysicsCount called. Payload: \(navigationStack.last?.payloadID ?? "none")")
     if navigationStack.last?.payloadID == "library" {
-      physics.numberOfItems = musicManager.playlists.count
+      print("DEBUG: Music Mode. Playlists: \(musicManager.playlists.count)")
+      physics.numberOfItems = max(1, musicManager.playlists.count)
     } else {
+      print("DEBUG: Menu Mode. Items: \(currentMenuItems.count)")
       physics.numberOfItems = currentMenuItems.count
     }
   }
@@ -115,8 +118,14 @@ struct DeviceShellView: View {
   }
 
   private func handleCenterPress() {
-    guard !currentMenuItems.isEmpty else { return }
-    guard selectedIndex < currentMenuItems.count else { return }
+    // If inside Music Library, we might have empty currentMenuItems (leaf node),
+    // but valid playlists. So we skip the guard check if in library mode.
+    if navigationStack.last?.payloadID == "library" {
+      // Proceed to music handling logic below
+    } else {
+      guard !currentMenuItems.isEmpty else { return }
+      guard selectedIndex < currentMenuItems.count else { return }
+    }
 
     let selectedItem = currentMenuItems[selectedIndex]
 
@@ -357,4 +366,3 @@ struct ScreenGlassOverlay: View {
     }
   }
 }
-
