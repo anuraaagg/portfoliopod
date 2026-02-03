@@ -94,11 +94,17 @@ struct DeviceShellView: View {
 
   private func updatePhysicsCount() {
     print("DEBUG: updatePhysicsCount called. Payload: \(navigationStack.last?.payloadID ?? "none")")
-    if navigationStack.last?.payloadID == "library" {
-      print("DEBUG: Music Mode. Playlists: \(musicManager.playlists.count)")
+    let payload = navigationStack.last?.payloadID ?? ""
+
+    if payload == "library" {
+      // Music Root (Playlists, Songs)
+      physics.numberOfItems = 2
+    } else if payload == "music-playlists" {
       physics.numberOfItems = max(1, musicManager.playlists.count)
+    } else if payload == "music-songs" {
+      physics.numberOfItems = max(1, musicManager.allSongs.count)
     } else {
-      print("DEBUG: Menu Mode. Items: \(currentMenuItems.count)")
+      // Standard Menu Mode
       physics.numberOfItems = currentMenuItems.count
     }
   }
@@ -117,22 +123,41 @@ struct DeviceShellView: View {
     }
   }
 
-    // Special handling for Music Library Leaf Selection
-    if navigationStack.last?.payloadID == "library" {
-      let playlists = MusicLibraryManager.shared.playlists
-      // Ensure we don't crash if playlist is empty or index is out of bounds
+  private func handleCenterPress() {
+    let payload = navigationStack.last?.payloadID ?? ""
+
+    // Special handling for Music Library
+    if payload == "library" {
+      // Navigate to Playlists (0) or Songs (1)
+      let nextNode =
+        selectedIndex == 0
+        ? MenuNode(
+          id: "music-playlists", title: "Playlists", contentType: .media,
+          payloadID: "music-playlists")
+        : MenuNode(id: "music-songs", title: "Songs", contentType: .media, payloadID: "music-songs")
+
+      withAnimation(.easeOut(duration: 0.2)) {
+        navigationStack.append(nextNode)
+        selectedIndex = 0
+        physics.reset(to: 0)
+      }
+      return
+    }
+
+    if payload == "music-playlists" {
+      let playlists = musicManager.playlists
       if selectedIndex < playlists.count {
-        MusicLibraryManager.shared.playPlaylist(playlists[selectedIndex])
-        
-        // Navigate to "Now Playing"
-        let nowPlayingNode = MenuNode(
-          id: "nowplaying", title: "Now Playing", contentType: .media, payloadID: "nowplaying")
-          
-        withAnimation(.easeOut(duration: 0.2)) {
-          navigationStack.append(nowPlayingNode)
-          selectedIndex = 0
-          physics.reset(to: 0)
-        }
+        musicManager.playPlaylist(playlists[selectedIndex])
+        navigateToNowPlaying()
+      }
+      return
+    }
+
+    if payload == "music-songs" {
+      let songs = musicManager.allSongs
+      if selectedIndex < songs.count {
+        musicManager.playSong(songs[selectedIndex])
+        navigateToNowPlaying()
       }
       return
     }
@@ -148,6 +173,16 @@ struct DeviceShellView: View {
       navigationStack.append(selectedItem)
       selectedIndex = 0
       physics.reset(to: 0)  // Force physics synchronization
+    }
+  }
+
+  private func navigateToNowPlaying() {
+    let nowPlayingNode = MenuNode(
+      id: "nowplaying", title: "Now Playing", contentType: .media, payloadID: "nowplaying")
+    withAnimation(.easeOut(duration: 0.2)) {
+      navigationStack.append(nowPlayingNode)
+      selectedIndex = 0
+      physics.reset(to: 0)
     }
   }
 

@@ -527,28 +527,40 @@ struct WritingContentView: View {
 }
 
 struct ClassicNowPlayingView: View {
+  @ObservedObject private var music = MusicLibraryManager.shared
+
   var body: some View {
     VStack(spacing: 30) {
       // Album Art (Brutalist frame)
       ZStack(alignment: .bottom) {
-        Rectangle()
-          .fill(Color.black)
-          .frame(width: 140, height: 140)
-          .overlay(
-            Rectangle()
-              .stroke(SettingsStore.shared.theme.accentColor, lineWidth: 2)
-          )
-          .overlay(
-            BarVisualizer()
-              .frame(width: 120, height: 40)
-              .padding(.bottom, 10),
-            alignment: .bottom
-          )
-          .overlay(
-            Image(systemName: "waveform.path")
-              .font(.system(size: 40))
-              .foregroundColor(SettingsStore.shared.theme.accentColor)
-          )
+        if let art = music.nowPlayingArtwork {
+          Image(uiImage: art)
+            .resizable()
+            .aspectRatio(1, contentMode: .fill)
+            .frame(width: 140, height: 140)
+            .clipped()
+            .overlay(
+              Rectangle()
+                .stroke(SettingsStore.shared.theme.accentColor, lineWidth: 2)
+            )
+        } else {
+          Rectangle()
+            .fill(Color.black)
+            .frame(width: 140, height: 140)
+            .overlay(
+              Rectangle()
+                .stroke(SettingsStore.shared.theme.accentColor, lineWidth: 2)
+            )
+            .overlay(
+              Image(systemName: "waveform.path")
+                .font(.system(size: 40))
+                .foregroundColor(SettingsStore.shared.theme.accentColor)
+            )
+        }
+
+        BarVisualizer()
+          .frame(width: 120, height: 40)
+          .padding(.bottom, 10)
       }
       .padding(.top, 40)
 
@@ -558,13 +570,17 @@ struct ClassicNowPlayingView: View {
           .foregroundColor(.gray)
 
         VStack(spacing: 6) {
-          Text("LOOPS: SESSION_01")
+          Text(music.nowPlayingTitle.isEmpty ? "—" : music.nowPlayingTitle)
             .font(.system(size: 16, weight: .bold, design: .monospaced))
             .foregroundColor(.black)
+            .lineLimit(1)
+            .truncationMode(.tail)
 
-          Text("ANURAG")
+          Text(music.nowPlayingArtist.isEmpty ? "" : music.nowPlayingArtist)
             .font(.system(size: 14, weight: .semibold, design: .monospaced))
             .foregroundColor(SettingsStore.shared.theme.accentColor)
+            .lineLimit(1)
+            .truncationMode(.tail)
         }
       }
 
@@ -582,9 +598,9 @@ struct ClassicNowPlayingView: View {
         .frame(width: 200)
 
         HStack {
-          Text("01:23")
+          Text("—:—")
           Spacer()
-          Text("-02:45")
+          Text("—:—")
         }
         .font(.system(size: 10, weight: .bold, design: .monospaced))
         .foregroundColor(.gray)
@@ -624,20 +640,20 @@ struct MusicLibraryView: View {
   @Binding var selectedIndex: Int
 
   var body: some View {
+    let payload = navigationStack.last?.payloadID ?? ""
+
     VStack(spacing: 0) {
       if musicManager.permissionStatus == .authorized {
-        VStack(spacing: 0) {
-          let playlists = musicManager.playlists
-          if playlists.isEmpty {
-            Text("[ NO PLAYLISTS FOUND ]")
-              .font(.system(size: 14, design: .monospaced))
-              .foregroundColor(.gray)
-              .padding(.top, 40)
-          } else {
-            ForEach(0..<playlists.count, id: \.self) { index in
-              playlistRow(index: index, playlist: playlists[index])
-            }
-          }
+        if payload == "library" {
+          rootMenu
+        } else if payload == "music-playlists" {
+          playlistsList
+        } else if payload == "music-songs" {
+          songsList
+        } else {
+          // Fallback or unexpected state
+          Text("[ MUSIC_ERROR ]")
+            .font(.system(size: 14, design: .monospaced))
         }
       } else {
         VStack(spacing: 12) {
@@ -657,22 +673,82 @@ struct MusicLibraryView: View {
     }
   }
 
-  private func playlistRow(index: Int, playlist: MPMediaItemCollection) -> some View {
-    let name = playlist.value(forProperty: MPMediaPlaylistPropertyName) as? String ?? "Unknown"
-    return HStack {
-      Text(
-        index == selectedIndex
-          ? "[ \(name) ]"
-          : "  \(name)"
-      )
-      .font(
-        .system(size: 15, weight: index == selectedIndex ? .bold : .medium, design: .monospaced)
-      )
-      .foregroundColor(index == selectedIndex ? .white : .black)
+  private var rootMenu: some View {
+    VStack(spacing: 0) {
+      rootRow(index: 0, title: "Playlists")
+      rootRow(index: 1, title: "Songs")
+    }
+  }
+
+  private func rootRow(index: Int, title: String) -> some View {
+    HStack {
+      Text(index == selectedIndex ? "[ \(title) ]" : "  \(title)")
+        .font(
+          .system(size: 15, weight: index == selectedIndex ? .bold : .medium, design: .monospaced)
+        )
+        .foregroundColor(index == selectedIndex ? .white : .black)
       Spacer()
     }
     .padding(.horizontal, 16)
     .padding(.vertical, 10)
     .background(index == selectedIndex ? SettingsStore.shared.theme.accentColor : Color.clear)
+  }
+
+  private var playlistsList: some View {
+    VStack(spacing: 0) {
+      let playlists = musicManager.playlists
+      if playlists.isEmpty {
+        Text("[ NO PLAYLISTS FOUND ]")
+          .font(.system(size: 14, design: .monospaced))
+          .foregroundColor(.gray)
+          .padding(.top, 40)
+      } else {
+        ForEach(0..<playlists.count, id: \.self) { index in
+          let playlist = playlists[index]
+          let name = playlist.name ?? "Unknown"
+          HStack {
+            Text(index == selectedIndex ? "[ \(name) ]" : "  \(name)")
+              .font(
+                .system(
+                  size: 15, weight: index == selectedIndex ? .bold : .medium, design: .monospaced)
+              )
+              .foregroundColor(index == selectedIndex ? .white : .black)
+            Spacer()
+          }
+          .padding(.horizontal, 16)
+          .padding(.vertical, 10)
+          .background(index == selectedIndex ? SettingsStore.shared.theme.accentColor : Color.clear)
+        }
+      }
+    }
+  }
+
+  private var songsList: some View {
+    VStack(spacing: 0) {
+      let songs = musicManager.allSongs
+      if songs.isEmpty {
+        Text("[ NO SONGS FOUND ]")
+          .font(.system(size: 14, design: .monospaced))
+          .foregroundColor(.gray)
+          .padding(.top, 40)
+      } else {
+        ForEach(0..<songs.count, id: \.self) { index in
+          let item = songs[index]
+          let title = item.title ?? "Unknown"
+          HStack {
+            Text(index == selectedIndex ? "[ \(title) ]" : "  \(title)")
+              .font(
+                .system(
+                  size: 15, weight: index == selectedIndex ? .bold : .medium, design: .monospaced)
+              )
+              .foregroundColor(index == selectedIndex ? .white : .black)
+            Spacer()
+          }
+          .padding(.horizontal, 16)
+          .padding(.vertical, 10)
+          .background(index == selectedIndex ? SettingsStore.shared.theme.accentColor : Color.clear)
+        }
+      }
+    }
   }
 }

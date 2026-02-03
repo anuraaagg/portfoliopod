@@ -20,8 +20,8 @@ class ClickWheelPhysics: ObservableObject {
   @Published var scrollOffset: CGFloat = 0  // Added for content scrolling
 
   // Configuration
-  let inertia: Double = 0.80  // Reduced from 0.85 (less initial throw weight)
-  let friction: Double = 0.82  // Reduced from 0.92 (stops much faster)
+  let inertia: Double = 0.90  // higher inertia factor reduces imparted momentum
+  let friction: Double = 0.70  // stronger friction to stop faster
 
   // Interaction state
   @Published var isDragging: Bool = false
@@ -35,7 +35,7 @@ class ClickWheelPhysics: ObservableObject {
   }
 
   // Authentic Click Wheel Sensitivity: Updated for better stability
-  let degreesPerStep: Double = 30.0
+  let degreesPerStep: Double = 36.0  // require more rotation per tick
 
   // Performance Optimization: Pre-initialize haptic generator
   private let tickGenerator = UIImpactFeedbackGenerator(style: .light)
@@ -96,20 +96,20 @@ class ClickWheelPhysics: ObservableObject {
     guard !isDragging else { return }
 
     // Apply momentum with friction
-    // Cutoff increased to 0.005 to prevent drift
-    if abs(angularMomentum) > 0.005 {
+    // Cutoff increased to 0.02 to prevent drift
+    if abs(angularMomentum) > 0.02 {
       angularMomentum *= friction
-
-      // Update buffer from momentum
-      // Update buffer from momentum
       let deltaDegrees = (angularMomentum * 180.0 / .pi)
       rotationBuffer += deltaDegrees
-
-      // Update scroll offset for continuous scrolling
-      scrollOffset -= CGFloat(deltaDegrees * 1.5)  // Reduced sensitivity
+      scrollOffset -= CGFloat(deltaDegrees * 1.2)
       processBuffer()
-
       currentAngle += angularMomentum
+    } else {
+      // Drain residual momentum and buffer to fully stop
+      angularMomentum = 0
+      if abs(rotationBuffer) < 5 {
+        rotationBuffer = 0
+      }
     }
   }
 
@@ -147,18 +147,21 @@ class ClickWheelPhysics: ObservableObject {
     // Update relative buffer (in degrees)
     let deltaDegrees = (deltaAngle * 180.0 / .pi)
     rotationBuffer += deltaDegrees
-    scrollOffset -= CGFloat(deltaDegrees * 1.5)  // Reduced sensitivity
+    scrollOffset -= CGFloat(deltaDegrees * 1.0)  // Reduced sensitivity
 
     processBuffer()
 
     // Calculate velocity for momentum (with smoothing)
     let instantaneousVelocity = deltaAngle / 0.016
     angularVelocity = (angularVelocity * 0.7) + (instantaneousVelocity * 0.3)
-    angularMomentum = angularVelocity * (1.0 - inertia)
+    angularMomentum = angularVelocity * (1.0 - inertia) * 0.6
   }
 
   func endDrag() {
     isDragging = false
+    if abs(rotationBuffer) < (degreesPerStep * 0.5) {
+      rotationBuffer = 0
+    }
   }
 
   func angleFromPoint(_ point: CGPoint, center: CGPoint) -> Double {
@@ -209,3 +212,4 @@ class ClickWheelPhysics: ObservableObject {
     centerPressSubject.send()
   }
 }
+
