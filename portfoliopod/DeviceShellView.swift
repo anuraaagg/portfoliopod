@@ -14,25 +14,26 @@ struct DeviceShellView: View {
   @StateObject private var physics = ClickWheelPhysics(numberOfItems: 0)
   @StateObject private var stickerStore = StickerStore()  // Sticker Manager
   @ObservedObject private var musicManager = MusicLibraryManager.shared
+  @ObservedObject private var settings = SettingsStore.shared
   @State private var navigationStack: [MenuNode] = []
   @State private var selectedIndex: Int = 0
   @State private var isBooting: Bool = true  // Boot animation state
   @State private var isPoweredOn: Bool = true  // Power state
+  @State private var isEditingWallpaper: Bool = false
 
   var body: some View {
     GeometryReader { geometry in
       ZStack {
-        // System background (Premium Studio Look)
-        RadialGradient(
-          stops: [
-            .init(color: Color(white: 0.98), location: 0),
-            .init(color: Color(white: 0.82), location: 1),
-          ],
-          center: .center,
-          startRadius: 0,
-          endRadius: 1000
-        )
-        .ignoresSafeArea()
+        // System background (Dynamic Wallpaper)
+        WallpaperView(wallpaper: settings.currentWallpaper)
+          .onLongPressGesture(minimumDuration: 1.0) {
+            let generator = UIImpactFeedbackGenerator(style: .medium)
+            generator.impactOccurred()
+            withAnimation {
+              isEditingWallpaper = true
+            }
+          }
+          .ignoresSafeArea()
 
         // Metallic reflection overlay (Real-time gyro driven)
         MetalView(lightAngle: Float(motionManager.tilt))
@@ -58,6 +59,15 @@ struct DeviceShellView: View {
         .aspectRatio(0.597, contentMode: .fit)  // Authentic 6th Gen Ratio
         .padding(.top, 60)  // Extra clearance for the top edge
         .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
+        .scaleEffect(isEditingWallpaper ? 0.75 : 1.0)
+        .animation(.spring(response: 0.5, dampingFraction: 0.7), value: isEditingWallpaper)
+
+        // Wallpaper Switcher Overlay
+        if isEditingWallpaper {
+          WallpaperSwitcher(isPresented: $isEditingWallpaper)
+            .transition(.opacity)
+            .zIndex(100)
+        }
       }
       .onAppear {
         // Sync physics with initial items
