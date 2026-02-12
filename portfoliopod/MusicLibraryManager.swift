@@ -2,12 +2,11 @@
 //  MusicLibraryManager.swift
 //  portfoliopod
 //
-//  Apple Music Integration using MusicKit (supports streaming)
+//  Music library using iTunes Search API (free, no auth required)
 //
 
 import Combine
 import Foundation
-import MusicKit
 import UIKit
 
 class MusicLibraryManager: ObservableObject {
@@ -21,262 +20,179 @@ class MusicLibraryManager: ObservableObject {
     let songs: [SimpleSong]
   }
 
-  struct SimpleSong: Identifiable {
+  struct SimpleSong: Identifiable, Equatable {
     let id: String
     let title: String
     let artist: String
+    let album: String
     let artworkURL: URL?
-    let musicKitSong: Song?  // Keep reference for playback
+    let previewURL: URL?
+    let durationSeconds: Int
+
+    static func == (lhs: SimpleSong, rhs: SimpleSong) -> Bool {
+      lhs.id == rhs.id
+    }
   }
 
   @Published var playlists: [SimplePlaylist] = []
   @Published var allSongs: [SimpleSong] = []
-  @Published var permissionStatus: MusicAuthorization.Status = .notDetermined
+  @Published var permissionStatus: AuthStatus = .authorized  // Always authorized for iTunes API
+  @Published var isLoading: Bool = false
 
-  // Now Playing metadata
-  @Published var nowPlayingTitle: String = ""
-  @Published var nowPlayingArtist: String = ""
-  @Published var nowPlayingArtwork: UIImage? = nil
+  // Reference to audio player
+  private let audioPlayer = AudioPlayerManager.shared
+  private let iTunesService = iTunesService.shared
 
-  // MusicKit player
-  private let musicPlayer = ApplicationMusicPlayer.shared
-  private var cancellables = Set<AnyCancellable>()
+  // Auth status (simplified for iTunes - no auth needed)
+  enum AuthStatus {
+    case authorized
+    case notDetermined
+    case denied
+  }
 
   private init() {
-    checkPermissions()
-    setupNowPlayingObservers()
+    print("MusicLibraryManager: Initialized with iTunes Search API")
+    loadCuratedContent()
   }
 
-  func checkPermissions() {
-    permissionStatus = MusicAuthorization.currentStatus
-    print("MusicLibraryManager: MusicKit permission status = \(permissionStatus)")
+  // MARK: - Load Curated Content
 
-    Task {
-      let status = await MusicAuthorization.request()
-      await MainActor.run {
-        self.permissionStatus = status
-        print("MusicLibraryManager: MusicKit authorization result = \(status)")
+  func loadCuratedContent() {
+    print("MusicLibraryManager: Loading curated content...")
+    isLoading = true
 
-        if status == .authorized {
-          print("MusicLibraryManager: Apple Music authorized, loading library...")
-          self.refreshLibrary()
-        } else {
-          print("MusicLibraryManager: Apple Music not authorized - status: \(status)")
-          print("  User needs to:")
-          print("  1. Have an active Apple Music subscription")
-          print("  2. Be signed in to Apple ID")
-          print("  3. Grant permission when prompted")
-        }
-      }
-    }
-  }
-
-  func refreshLibrary() {
-    fetchPlaylists()
-    fetchAllSongs()
-  }
-
-  func fetchPlaylists() {
-    print("MusicLibraryManager: Fetching Apple Music playlists...")
     Task {
       do {
-        var request = MusicLibraryRequest<Playlist>()
-        request.limit = 50
-        let response = try await request.response()
+        // Load curated playlists
+        async let popularSongs = loadPopularSongs()
+        async let indianHits = loadIndianHits()
+        async let westernHits = loadWesternHits()
 
-        let simplePlaylists = await withTaskGroup(of: SimplePlaylist?.self) { group in
-          for playlist in response.items {
-            group.addTask {
-              await self.convertPlaylist(playlist)
-            }
-          }
-
-          var results: [SimplePlaylist] = []
-          for await result in group {
-            if let playlist = result {
-              results.append(playlist)
-            }
-          }
-          return results
-        }
+        let (popular, indian, western) = try await (popularSongs, indianHits, westernHits)
 
         await MainActor.run {
-          self.playlists = simplePlaylists
-          print("MusicLibraryManager: Loaded \(self.playlists.count) playlists")
+          self.playlists = [popular, indian, western]
+          self.allSongs = Array((popular.songs + indian.songs + western.songs).prefix(100))
+          self.isLoading = false
+          print("MusicLibraryManager: Loaded \(self.playlists.count) playlists, \(self.allSongs.count) songs")
         }
       } catch {
-        print("MusicLibraryManager: Error fetching playlists: \(error)")
+        print("MusicLibraryManager: Error loading content: \(error)")
+        await MainActor.run {
+          self.isLoading = false
+        }
       }
     }
   }
 
-  func fetchAllSongs() {
-    print("MusicLibraryManager: Fetching Apple Music library songs...")
+  private func loadPopularSongs() async throws -> SimplePlaylist {
+    let tracks = try await iTunesService.getPopularSongs()
+    return SimplePlaylist(
+      id: "popular",
+      name: "Popular Songs",
+      artworkURL: URL(string: tracks.first?.artworkUrl300 ?? ""),
+      songs: tracks.asSimpleSongs
+    )
+  }
+
+  private func loadIndianHits() async throws -> SimplePlaylist {
+    let searchTerms = ["Arijit Singh", "A.R. Rahman", "Shreya Ghoshal"]
+    let tracks = try await iTunesService.getCuratedPlaylist(
+      name: "Indian Hits",
+      searchTerms: searchTerms
+    )
+    return SimplePlaylist(
+      id: "indian",
+      name: "Indian Hits",
+      artworkURL: URL(string: tracks.first?.artworkUrl300 ?? ""),
+      songs: tracks.asSimpleSongs
+    )
+  }
+
+  private func loadWesternHits() async throws -> SimplePlaylist {
+    let searchTerms = ["The Weeknd", "Taylor Swift", "Ed Sheeran"]
+    let tracks = try await iTunesService.getCuratedPlaylist(
+      name: "Western Hits",
+      searchTerms: searchTerms
+    )
+    return SimplePlaylist(
+      id: "western",
+      name: "Western Hits",
+      artworkURL: URL(string: tracks.first?.artworkUrl300 ?? ""),
+      songs: tracks.asSimpleSongs
+    )
+  }
+
+  // MARK: - Search
+
+  func search(query: String) {
+    guard !query.isEmpty else { return }
+
+    isLoading = true
+
     Task {
       do {
-        var request = MusicLibraryRequest<Song>()
-        request.limit = 100  // Adjust as needed
-        let response = try await request.response()
-
-        let simpleSongs = response.items.map { song in
-          SimpleSong(
-            id: song.id.rawValue,
-            title: song.title,
-            artist: song.artistName,
-            artworkURL: song.artwork?.url(width: 300, height: 300),
-            musicKitSong: song
-          )
-        }
+        let tracks = try await iTunesService.searchSongs(query: query, limit: 50)
 
         await MainActor.run {
-          self.allSongs = simpleSongs
-          print("MusicLibraryManager: Loaded \(self.allSongs.count) songs")
-          if self.allSongs.isEmpty {
-            print("MusicLibraryManager: No songs in library. This could mean:")
-            print("  - No songs added to Apple Music library")
-            print("  - Not subscribed to Apple Music")
-            print("  - Library sync disabled in Settings > Music")
-          }
+          self.allSongs = tracks.asSimpleSongs
+          self.isLoading = false
+          print("MusicLibraryManager: Search returned \(self.allSongs.count) results")
         }
       } catch {
-        print("MusicLibraryManager: Error fetching songs: \(error)")
-        print("  Error details: \(error.localizedDescription)")
+        print("MusicLibraryManager: Search error: \(error)")
+        await MainActor.run {
+          self.isLoading = false
+        }
       }
     }
   }
 
-  private func convertPlaylist(_ playlist: Playlist) async -> SimplePlaylist? {
-    do {
-      // Fetch detailed playlist with tracks
-      let detailedRequest = MusicCatalogResourceRequest<Playlist>(
-        matching: \.id, equalTo: playlist.id)
-      let detailedResponse = try await detailedRequest.response()
-
-      guard let detailedPlaylist = detailedResponse.items.first,
-        let tracks = detailedPlaylist.tracks
-      else {
-        return SimplePlaylist(
-          id: playlist.id.rawValue,
-          name: playlist.name,
-          artworkURL: playlist.artwork?.url(width: 300, height: 300),
-          songs: []
-        )
-      }
-
-      let songs = tracks.prefix(50).compactMap { track -> SimpleSong? in
-        // Extract Song from Track enum
-        guard case .song(let song) = track else { return nil }
-
-        return SimpleSong(
-          id: track.id.rawValue,
-          title: track.title,
-          artist: track.artistName,
-          artworkURL: track.artwork?.url(width: 300, height: 300),
-          musicKitSong: song
-        )
-      }
-
-      return SimplePlaylist(
-        id: playlist.id.rawValue,
-        name: playlist.name,
-        artworkURL: playlist.artwork?.url(width: 300, height: 300),
-        songs: songs
-      )
-    } catch {
-      print("MusicLibraryManager: Error loading playlist \(playlist.name): \(error)")
-      return SimplePlaylist(
-        id: playlist.id.rawValue,
-        name: playlist.name,
-        artworkURL: playlist.artwork?.url(width: 300, height: 300),
-        songs: []
-      )
-    }
-  }
+  // MARK: - Playback
 
   func playPlaylist(_ playlist: SimplePlaylist) {
-    print("MusicLibraryManager: Playing playlist: \(playlist.name)")
-    Task {
-      do {
-        let songs = playlist.songs.compactMap { $0.musicKitSong }
-        if !songs.isEmpty {
-          musicPlayer.queue = ApplicationMusicPlayer.Queue(for: songs)
-          try await musicPlayer.play()
-          print("MusicLibraryManager: Playback started")
-        }
-      } catch {
-        print("MusicLibraryManager: Playback error: \(error)")
-      }
+    guard let firstSong = playlist.songs.first else {
+      print("MusicLibraryManager: Playlist is empty")
+      return
     }
+    playSong(firstSong)
   }
 
   func playSong(_ song: SimpleSong) {
-    print("MusicLibraryManager: Playing song: \(song.title)")
-    Task {
-      do {
-        if let mkSong = song.musicKitSong {
-          musicPlayer.queue = ApplicationMusicPlayer.Queue(for: [mkSong])
-          try await musicPlayer.play()
-          print("MusicLibraryManager: Playback started")
-        }
-      } catch {
-        print("MusicLibraryManager: Playback error: \(error)")
-      }
-    }
+    print("MusicLibraryManager: Playing '\(song.title)' by \(song.artist)")
+    audioPlayer.play(song: song)
   }
 
-  private func setupNowPlayingObservers() {
-    // Observe playback state changes
-    musicPlayer.state.objectWillChange
-      .sink { [weak self] _ in
-        self?.updateNowPlayingMetadata()
-      }
-      .store(in: &cancellables)
-
-    // Initial update
-    updateNowPlayingMetadata()
+  func togglePlayPause() {
+    audioPlayer.togglePlayPause()
   }
 
-  private func updateNowPlayingMetadata() {
-    Task {
-      guard let currentEntry = musicPlayer.queue.currentEntry else {
-        await MainActor.run {
-          self.nowPlayingTitle = ""
-          self.nowPlayingArtist = ""
-          self.nowPlayingArtwork = nil
-        }
-        return
-      }
-
-      let title = currentEntry.title
-      let artist = currentEntry.subtitle ?? ""
-      var artwork: UIImage? = nil
-
-      if let artworkURL = currentEntry.artwork?.url(width: 300, height: 300) {
-        // Load artwork asynchronously
-        do {
-          let (data, _) = try await URLSession.shared.data(from: artworkURL)
-          artwork = UIImage(data: data)
-        } catch {
-          print("MusicLibraryManager: Failed to load artwork: \(error)")
-        }
-      }
-
-      await MainActor.run {
-        self.nowPlayingTitle = title
-        self.nowPlayingArtist = artist
-        self.nowPlayingArtwork = artwork
-      }
-    }
+  func pausePlayback() {
+    audioPlayer.pause()
   }
 
-  // Compatibility computed properties for existing UI code
+  func stopPlayback() {
+    audioPlayer.stop()
+  }
+
+  // MARK: - Legacy Compatibility
+
+  func checkPermissions() {
+    // No permissions needed for iTunes API
+    print("MusicLibraryManager: No permissions required for iTunes API")
+    permissionStatus = .authorized
+  }
+
+  func refreshLibrary() {
+    loadCuratedContent()
+  }
+
+  // Compatibility computed property for old UI code
   var permissionStatusCompat: Int {
     switch permissionStatus {
-    case .authorized: return 3  // MPMediaLibraryAuthorizationStatus.authorized
+    case .authorized: return 3
     case .denied: return 2
-    case .restricted: return 1
     case .notDetermined: return 0
-    @unknown default: return 0
     }
   }
 }

@@ -114,7 +114,7 @@ struct WallpaperSwitcher: View {
           }
         }
         .tabViewStyle(.page(indexDisplayMode: .always))
-        .frame(width: UIScreen.main.bounds.width, height: 580)
+        .frame(maxWidth: .infinity, minHeight: 580, maxHeight: 580)
         .padding(.top, 60)
 
         Spacer()
@@ -347,3 +347,4 @@ struct WallpaperThumbnail: View {
     return nil
   }
 }
+

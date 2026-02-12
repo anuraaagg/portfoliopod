@@ -5,9 +5,8 @@
 //  Main screen content view
 //
 
+import AVFoundation
 import Combine
-import MediaPlayer
-import MusicKit
 import SwiftUI
 
 struct ScreenView: View {
@@ -528,13 +527,13 @@ struct WritingContentView: View {
 }
 
 struct ClassicNowPlayingView: View {
-  @ObservedObject private var music = MusicLibraryManager.shared
+  @ObservedObject private var audioPlayer = AudioPlayerManager.shared
 
   var body: some View {
     VStack(spacing: 30) {
-      // Album Art (Brutalist frame)
+      // Album Art (Classic iPod style)
       ZStack(alignment: .bottom) {
-        if let art = music.nowPlayingArtwork {
+        if let art = audioPlayer.nowPlayingArtwork {
           Image(uiImage: art)
             .resizable()
             .aspectRatio(1, contentMode: .fill)
@@ -542,75 +541,108 @@ struct ClassicNowPlayingView: View {
             .clipped()
             .overlay(
               Rectangle()
-                .stroke(SettingsStore.shared.theme.accentColor, lineWidth: 2)
+                .stroke(Color.black.opacity(0.2), lineWidth: 1)
             )
         } else {
-          Rectangle()
-            .fill(Color.black)
+          // Loading artwork from URL
+          if let artworkURL = audioPlayer.nowPlayingArtworkURL {
+            AsyncImage(url: artworkURL) { phase in
+              switch phase {
+              case .success(let image):
+                image
+                  .resizable()
+                  .aspectRatio(1, contentMode: .fill)
+              case .failure, .empty:
+                placeholderArtwork
+              @unknown default:
+                placeholderArtwork
+              }
+            }
             .frame(width: 140, height: 140)
+            .clipped()
             .overlay(
               Rectangle()
-                .stroke(SettingsStore.shared.theme.accentColor, lineWidth: 2)
+                .stroke(Color.black.opacity(0.2), lineWidth: 1)
             )
-            .overlay(
-              Image(systemName: "waveform.path")
-                .font(.system(size: 40))
-                .foregroundColor(SettingsStore.shared.theme.accentColor)
-            )
+          } else {
+            placeholderArtwork
+          }
         }
 
-        BarVisualizer()
-          .frame(width: 120, height: 40)
-          .padding(.bottom, 10)
+        // Visualizer only when playing
+        if audioPlayer.isPlaying {
+          BarVisualizer()
+            .frame(width: 120, height: 40)
+            .padding(.bottom, 10)
+        }
       }
       .padding(.top, 40)
 
-      VStack(spacing: 12) {
-        Text("[ NOW_PLAYING ]")
-          .font(.system(size: 10, weight: .bold, design: .monospaced))
+      // Song info
+      VStack(spacing: 6) {
+        Text(audioPlayer.nowPlayingTitle.isEmpty ? "Not Playing" : audioPlayer.nowPlayingTitle)
+          .font(.system(size: 16, weight: .bold))
+          .foregroundColor(.black)
+          .lineLimit(2)
+          .multilineTextAlignment(.center)
+          .truncationMode(.tail)
+          .padding(.horizontal, 20)
+
+        Text(audioPlayer.nowPlayingArtist)
+          .font(.system(size: 13, weight: .semibold))
           .foregroundColor(.gray)
-
-        VStack(spacing: 6) {
-          Text(music.nowPlayingTitle.isEmpty ? "—" : music.nowPlayingTitle)
-            .font(.system(size: 16, weight: .bold, design: .monospaced))
-            .foregroundColor(.black)
-            .lineLimit(1)
-            .truncationMode(.tail)
-
-          Text(music.nowPlayingArtist.isEmpty ? "" : music.nowPlayingArtist)
-            .font(.system(size: 14, weight: .semibold, design: .monospaced))
-            .foregroundColor(SettingsStore.shared.theme.accentColor)
-            .lineLimit(1)
-            .truncationMode(.tail)
-        }
+          .lineLimit(1)
+          .truncationMode(.tail)
       }
 
-      // Progress Bar (Terminal style)
-      VStack(spacing: 12) {
-        ZStack(alignment: .leading) {
-          Rectangle()
-            .fill(Color.black.opacity(0.1))
-            .frame(height: 4)
+      // Progress Bar (Classic iPod style)
+      VStack(spacing: 8) {
+        GeometryReader { geo in
+          ZStack(alignment: .leading) {
+            // Background
+            Rectangle()
+              .fill(Color.black.opacity(0.1))
+              .frame(height: 4)
 
-          Rectangle()
-            .fill(SettingsStore.shared.theme.accentColor)
-            .frame(width: 80, height: 4)
+            // Progress
+            Rectangle()
+              .fill(Color.black)
+              .frame(width: geo.size.width * audioPlayer.progress, height: 4)
+          }
         }
-        .frame(width: 200)
+        .frame(height: 4)
+        .padding(.horizontal, 20)
 
+        // Time stamps
         HStack {
-          Text("—:—")
+          Text(audioPlayer.currentTimeFormatted)
           Spacer()
-          Text("—:—")
+          Text(audioPlayer.durationFormatted)
         }
-        .font(.system(size: 10, weight: .bold, design: .monospaced))
+        .font(.system(size: 10, weight: .medium))
         .foregroundColor(.gray)
-        .frame(width: 200)
+        .padding(.horizontal, 20)
       }
+      .padding(.top, 10)
 
       Spacer()
     }
     .background(Color.white)
+  }
+
+  private var placeholderArtwork: some View {
+    Rectangle()
+      .fill(Color(white: 0.95))
+      .frame(width: 140, height: 140)
+      .overlay(
+        Image(systemName: "music.note")
+          .font(.system(size: 40))
+          .foregroundColor(.gray)
+      )
+      .overlay(
+        Rectangle()
+          .stroke(Color.black.opacity(0.2), lineWidth: 1)
+      )
   }
 }
 
@@ -644,29 +676,17 @@ struct MusicLibraryView: View {
     let payload = navigationStack.last?.payloadID ?? ""
 
     VStack(spacing: 0) {
-      if musicManager.permissionStatus == MusicAuthorization.Status.authorized {
-        if payload == "library" {
-          rootMenu
-        } else if payload == "music-playlists" {
-          playlistsList
-        } else if payload == "music-songs" {
-          songsList
-        } else {
-          // Fallback or unexpected state
-          Text("[ MUSIC_ERROR ]")
-            .font(.system(size: 14, design: .monospaced))
-        }
+      // iTunes API is always authorized (no permissions needed)
+      if payload == "library" {
+        rootMenu
+      } else if payload == "music-playlists" {
+        playlistsList
+      } else if payload == "music-songs" {
+        songsList
       } else {
-        VStack(spacing: 12) {
-          Image(systemName: "lock.fill")
-            .font(.system(size: 30))
-          Text("[ ACCESS_DENIED ]")
-            .font(.system(size: 14, weight: .bold, design: .monospaced))
-          Text("ENABLE MUSIC PERMISSIONS IN SETTINGS")
-            .font(.system(size: 10, design: .monospaced))
-            .foregroundColor(.gray)
-        }
-        .padding(.top, 60)
+        // Fallback or unexpected state
+        Text("[ MUSIC_ERROR ]")
+          .font(.system(size: 14, design: .monospaced))
       }
     }
     .onAppear {
