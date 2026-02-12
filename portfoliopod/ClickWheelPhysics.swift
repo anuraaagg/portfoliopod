@@ -101,7 +101,7 @@ class ClickWheelPhysics: ObservableObject {
       angularMomentum *= friction
       let deltaDegrees = (angularMomentum * 180.0 / .pi)
       rotationBuffer += deltaDegrees
-      scrollOffset -= CGFloat(deltaDegrees * 1.2)
+      scrollOffset -= CGFloat(deltaDegrees * 1.2)  // Clockwise = scroll up (reading forward)
       processBuffer()
       currentAngle += angularMomentum
     } else {
@@ -147,7 +147,7 @@ class ClickWheelPhysics: ObservableObject {
     // Update relative buffer (in degrees)
     let deltaDegrees = (deltaAngle * 180.0 / .pi)
     rotationBuffer += deltaDegrees
-    scrollOffset -= CGFloat(deltaDegrees * 1.0)  // Reduced sensitivity
+    scrollOffset -= CGFloat(deltaDegrees * 1.0)  // Clockwise = scroll up (reading forward)
 
     processBuffer()
 

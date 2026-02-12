@@ -7,6 +7,7 @@
 
 import Combine
 import MediaPlayer
+import MusicKit
 import SwiftUI
 
 struct ScreenView: View {
@@ -315,7 +316,7 @@ struct NavigationContentView: View {
             contentView
               .id("top")
               .padding(20)
-              .offset(y: -physics.scrollOffset)  // Drive scroll with wheel
+              .offset(y: -physics.scrollOffset)  // Drive scroll with wheel (clockwise = up/forward)
           }
           .scrollDisabled(true)  // Authentic iPod experience
         }
@@ -643,7 +644,7 @@ struct MusicLibraryView: View {
     let payload = navigationStack.last?.payloadID ?? ""
 
     VStack(spacing: 0) {
-      if musicManager.permissionStatus == .authorized {
+      if musicManager.permissionStatus == MusicAuthorization.Status.authorized {
         if payload == "library" {
           rootMenu
         } else if payload == "music-playlists" {
@@ -705,7 +706,7 @@ struct MusicLibraryView: View {
       } else {
         ForEach(0..<playlists.count, id: \.self) { index in
           let playlist = playlists[index]
-          let name = playlist.name ?? "Unknown"
+          let name = playlist.name
           HStack {
             Text(index == selectedIndex ? "[ \(name) ]" : "  \(name)")
               .font(
@@ -734,7 +735,7 @@ struct MusicLibraryView: View {
       } else {
         ForEach(0..<songs.count, id: \.self) { index in
           let item = songs[index]
-          let title = item.title ?? "Unknown"
+          let title = item.title
           HStack {
             Text(index == selectedIndex ? "[ \(title) ]" : "  \(title)")
               .font(

@@ -220,85 +220,82 @@ struct WallpaperCard: View {
   @ObservedObject var settings = SettingsStore.shared
 
   var body: some View {
-    ZStack {
-      // Background blur effect
-      RoundedRectangle(cornerRadius: 24)
-        .fill(.ultraThinMaterial)
-        .opacity(0.3)
+    GeometryReader { geo in
+      let width = geo.size.width
+      let height = geo.size.height
 
-      // Thumbnail with fixed aspect ratio container
       ZStack {
-        if wallpaper.type == .gradient {
-          LinearGradient(
-            colors: wallpaper.swiftUIColors,
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-          )
-        } else if wallpaper.type == .image {
-          WallpaperThumbnail(
-            imageName: wallpaper.imageName,
-            thumbnailName: wallpaper.thumbnailName
-          )
-        }
-      }
-      .frame(width: 280, height: 500)
-      .clipShape(RoundedRectangle(cornerRadius: 24))
-
-      // Checkmark Overlay
-      if isSelected {
-        VStack {
-          Spacer()
-          ZStack {
-            Circle()
-              .fill(Color.blue)
-              .frame(width: 50, height: 50)
-
-            Image(systemName: "checkmark.circle.fill")
-              .font(.system(size: 32))
-              .foregroundColor(.white)
+        // Thumbnail with fixed aspect ratio container
+        ZStack {
+          if wallpaper.type == .gradient {
+            LinearGradient(
+              colors: wallpaper.swiftUIColors,
+              startPoint: .topLeading,
+              endPoint: .bottomTrailing
+            )
+          } else if wallpaper.type == .image {
+            WallpaperThumbnail(
+              imageName: wallpaper.imageName,
+              thumbnailName: wallpaper.thumbnailName
+            )
           }
-          .shadow(radius: 4)
-          .padding(.bottom, 30)
         }
-        .frame(width: 280, height: 500)
-      }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-      // Delete button for user-added wallpapers
-      if wallpaper.isUserAdded {
-        VStack {
-          HStack {
+        // Checkmark Overlay
+        if isSelected {
+          VStack {
             Spacer()
-            Button(action: {
-              showDeleteConfirmation = true
-            }) {
-              ZStack {
-                Circle()
-                  .fill(Color.white.opacity(0.9))
-                  .frame(width: 36, height: 36)
+            ZStack {
+              Circle()
+                .fill(Color.blue)
+                .frame(width: 50, height: 50)
 
-                Image(systemName: "trash.circle.fill")
-                  .font(.system(size: 28))
-                  .foregroundColor(.red)
-              }
-              .shadow(radius: 4)
+              Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 32))
+                .foregroundColor(.white)
             }
-            .padding(15)
+            .shadow(radius: 4)
+            .padding(.bottom, 30)
           }
-          Spacer()
         }
-        .frame(width: 280, height: 500)
+
+        // Delete button for user-added wallpapers
+        if wallpaper.isUserAdded {
+          VStack {
+            HStack {
+              Spacer()
+              Button(action: {
+                showDeleteConfirmation = true
+              }) {
+                ZStack {
+                  Circle()
+                    .fill(Color.white.opacity(0.9))
+                    .frame(width: 36, height: 36)
+
+                  Image(systemName: "trash.circle.fill")
+                    .font(.system(size: 28))
+                    .foregroundColor(.red)
+                }
+                .shadow(radius: 4)
+              }
+              .padding(15)
+            }
+            Spacer()
+          }
+        }
       }
+      .clipShape(RoundedRectangle(cornerRadius: 24))
+      .overlay(
+        RoundedRectangle(cornerRadius: 24)
+          .stroke(Color.white.opacity(isSelected ? 0.5 : 0.2), lineWidth: isSelected ? 2 : 1)
+      )
+      .shadow(color: .black.opacity(0.3), radius: 15, x: 0, y: 10)
     }
-    .frame(width: 300, height: 520)
-    .clipShape(RoundedRectangle(cornerRadius: 24))
-    .overlay(
-      RoundedRectangle(cornerRadius: 24)
-        .stroke(Color.white.opacity(isSelected ? 0.5 : 0.2), lineWidth: isSelected ? 2 : 1)
-    )
+    .aspectRatio(9 / 19.5, contentMode: .fit)
     .scaleEffect(isSelected ? 1.0 : 0.88)
     .opacity(isSelected ? 1.0 : 0.75)
     .animation(.spring(response: 0.4, dampingFraction: 0.7), value: isSelected)
-    .shadow(color: .black.opacity(0.3), radius: 15, x: 0, y: 10)
     .alert("Delete Wallpaper?", isPresented: $showDeleteConfirmation) {
       Button("Cancel", role: .cancel) {}
       Button("Delete", role: .destructive) {
