@@ -12,6 +12,13 @@ import UIKit
 class MusicLibraryManager: ObservableObject {
   static let shared = MusicLibraryManager()
 
+  // Auth status (simplified for iTunes - no auth needed)
+  enum AuthStatus {
+    case authorized
+    case notDetermined
+    case denied
+  }
+
   // Simplified data models for UI compatibility
   struct SimplePlaylist: Identifiable {
     let id: String
@@ -38,17 +45,12 @@ class MusicLibraryManager: ObservableObject {
   @Published var allSongs: [SimpleSong] = []
   @Published var permissionStatus: AuthStatus = .authorized  // Always authorized for iTunes API
   @Published var isLoading: Bool = false
+  @Published var isInSearchMode: Bool = false
+  @Published private(set) var curatedSongs: [SimpleSong] = []
 
   // Reference to audio player
-  private let audioPlayer = AudioPlayerManager.shared
-  private let iTunesService = iTunesService.shared
-
-  // Auth status (simplified for iTunes - no auth needed)
-  enum AuthStatus {
-    case authorized
-    case notDetermined
-    case denied
-  }
+  private lazy var audioPlayer: AudioPlayerManager = AudioPlayerManager.shared
+  private lazy var itunesService: iTunesService = iTunesService.shared
 
   private init() {
     print("MusicLibraryManager: Initialized with iTunes Search API")
@@ -72,7 +74,11 @@ class MusicLibraryManager: ObservableObject {
 
         await MainActor.run {
           self.playlists = [popular, indian, western]
-          self.allSongs = Array((popular.songs + indian.songs + western.songs).prefix(100))
+          let combined = Array((popular.songs + indian.songs + western.songs).prefix(100))
+          self.curatedSongs = combined
+          if !self.isInSearchMode {
+            self.allSongs = combined
+          }
           self.isLoading = false
           print("MusicLibraryManager: Loaded \(self.playlists.count) playlists, \(self.allSongs.count) songs")
         }
@@ -86,7 +92,7 @@ class MusicLibraryManager: ObservableObject {
   }
 
   private func loadPopularSongs() async throws -> SimplePlaylist {
-    let tracks = try await iTunesService.getPopularSongs()
+    let tracks = try await itunesService.getPopularSongs()
     return SimplePlaylist(
       id: "popular",
       name: "Popular Songs",
@@ -97,7 +103,7 @@ class MusicLibraryManager: ObservableObject {
 
   private func loadIndianHits() async throws -> SimplePlaylist {
     let searchTerms = ["Arijit Singh", "A.R. Rahman", "Shreya Ghoshal"]
-    let tracks = try await iTunesService.getCuratedPlaylist(
+    let tracks = try await itunesService.getCuratedPlaylist(
       name: "Indian Hits",
       searchTerms: searchTerms
     )
@@ -111,7 +117,7 @@ class MusicLibraryManager: ObservableObject {
 
   private func loadWesternHits() async throws -> SimplePlaylist {
     let searchTerms = ["The Weeknd", "Taylor Swift", "Ed Sheeran"]
-    let tracks = try await iTunesService.getCuratedPlaylist(
+    let tracks = try await itunesService.getCuratedPlaylist(
       name: "Western Hits",
       searchTerms: searchTerms
     )
@@ -126,16 +132,23 @@ class MusicLibraryManager: ObservableObject {
   // MARK: - Search
 
   func search(query: String) {
-    guard !query.isEmpty else { return }
-
+    let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+    if trimmed.isEmpty {
+      // Exit search mode and restore curated content
+      isInSearchMode = false
+      allSongs = curatedSongs
+      return
+    }
+    isInSearchMode = true
     isLoading = true
 
     Task {
       do {
-        let tracks = try await iTunesService.searchSongs(query: query, limit: 50)
+        let tracks = try await itunesService.searchSongs(query: trimmed, limit: 50)
 
         await MainActor.run {
           self.allSongs = tracks.asSimpleSongs
+          self.isInSearchMode = true
           self.isLoading = false
           print("MusicLibraryManager: Search returned \(self.allSongs.count) results")
         }
@@ -196,3 +209,4 @@ class MusicLibraryManager: ObservableObject {
     }
   }
 }
+

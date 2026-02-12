@@ -718,58 +718,96 @@ struct MusicLibraryView: View {
   private var playlistsList: some View {
     VStack(spacing: 0) {
       let playlists = musicManager.playlists
+
       if playlists.isEmpty {
         Text("[ NO PLAYLISTS FOUND ]")
           .font(.system(size: 14, design: .monospaced))
           .foregroundColor(.gray)
           .padding(.top, 40)
       } else {
-        ForEach(0..<playlists.count, id: \.self) { index in
-          let playlist = playlists[index]
-          let name = playlist.name
-          HStack {
-            Text(index == selectedIndex ? "[ \(name) ]" : "  \(name)")
-              .font(
-                .system(
-                  size: 15, weight: index == selectedIndex ? .bold : .medium, design: .monospaced)
-              )
-              .foregroundColor(index == selectedIndex ? .white : .black)
-            Spacer()
+        ScrollViewReader { proxy in
+          ScrollView {
+            VStack(spacing: 0) {
+              ForEach(0..<playlists.count, id: \.self) { index in
+                let playlist = playlists[index]
+                let name = playlist.name
+                HStack {
+                  Text(index == selectedIndex ? "[ \(name) ]" : "  \(name)")
+                    .font(
+                      .system(
+                        size: 15, weight: index == selectedIndex ? .bold : .medium, design: .monospaced)
+                    )
+                    .foregroundColor(index == selectedIndex ? .white : .black)
+                  Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(index == selectedIndex ? SettingsStore.shared.theme.accentColor : Color.clear)
+                .id(index)
+              }
+            }
           }
-          .padding(.horizontal, 16)
-          .padding(.vertical, 10)
-          .background(index == selectedIndex ? SettingsStore.shared.theme.accentColor : Color.clear)
+          .scrollDisabled(true)
+          .onChange(of: selectedIndex) { oldIndex, newIndex in
+            if newIndex < playlists.count {
+              withAnimation(.easeInOut(duration: 0.12)) {
+                proxy.scrollTo(newIndex, anchor: .center)
+              }
+            }
+          }
         }
       }
+    }
+    .onAppear {
+      print("DEBUG: playlistsList appeared. Playlists count: \(playlists.count)")
     }
   }
 
   private var songsList: some View {
     VStack(spacing: 0) {
       let songs = musicManager.allSongs
+
       if songs.isEmpty {
         Text("[ NO SONGS FOUND ]")
           .font(.system(size: 14, design: .monospaced))
           .foregroundColor(.gray)
           .padding(.top, 40)
       } else {
-        ForEach(0..<songs.count, id: \.self) { index in
-          let item = songs[index]
-          let title = item.title
-          HStack {
-            Text(index == selectedIndex ? "[ \(title) ]" : "  \(title)")
-              .font(
-                .system(
-                  size: 15, weight: index == selectedIndex ? .bold : .medium, design: .monospaced)
-              )
-              .foregroundColor(index == selectedIndex ? .white : .black)
-            Spacer()
+        ScrollViewReader { proxy in
+          ScrollView {
+            VStack(spacing: 0) {
+              ForEach(0..<songs.count, id: \.self) { index in
+                let item = songs[index]
+                let title = item.title
+                HStack {
+                  Text(index == selectedIndex ? "[ \(title) ]" : "  \(title)")
+                    .font(
+                      .system(
+                        size: 15, weight: index == selectedIndex ? .bold : .medium, design: .monospaced)
+                    )
+                    .foregroundColor(index == selectedIndex ? .white : .black)
+                  Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(index == selectedIndex ? SettingsStore.shared.theme.accentColor : Color.clear)
+                .id(index)
+              }
+            }
           }
-          .padding(.horizontal, 16)
-          .padding(.vertical, 10)
-          .background(index == selectedIndex ? SettingsStore.shared.theme.accentColor : Color.clear)
+          .scrollDisabled(true)
+          .onChange(of: selectedIndex) { oldIndex, newIndex in
+            if newIndex < songs.count {
+              withAnimation(.easeInOut(duration: 0.12)) {
+                proxy.scrollTo(newIndex, anchor: .center)
+              }
+            }
+          }
         }
       }
+    }
+    .onAppear {
+      print("DEBUG: songsList appeared. Songs count: \(songs.count)")
     }
   }
 }

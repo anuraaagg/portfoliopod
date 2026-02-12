@@ -109,13 +109,19 @@ struct DeviceShellView: View {
     if payload == "library" {
       // Music Root (Playlists, Songs)
       physics.numberOfItems = 2
+      print("DEBUG: Set physics count to 2 (library root)")
     } else if payload == "music-playlists" {
-      physics.numberOfItems = max(1, musicManager.playlists.count)
+      let count = max(1, musicManager.playlists.count)
+      physics.numberOfItems = count
+      print("DEBUG: Set physics count to \(count) (playlists: \(musicManager.playlists.count))")
     } else if payload == "music-songs" {
-      physics.numberOfItems = max(1, musicManager.allSongs.count)
+      let count = max(1, musicManager.allSongs.count)
+      physics.numberOfItems = count
+      print("DEBUG: Set physics count to \(count) (songs: \(musicManager.allSongs.count))")
     } else {
       // Standard Menu Mode
       physics.numberOfItems = currentMenuItems.count
+      print("DEBUG: Set physics count to \(currentMenuItems.count) (standard menu)")
     }
   }
 
