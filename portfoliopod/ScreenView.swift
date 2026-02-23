@@ -300,7 +300,7 @@ struct NavigationContentView: View {
     VStack(spacing: 0) {
       if node.id.contains("nowplaying") {
         ClassicNowPlayingView()
-      } else if node.payloadID == "library" {
+      } else if let payload = node.payloadID, ["library", "music-playlists", "music-songs"].contains(payload) {
         MusicLibraryView(navigationStack: $navigationStack, selectedIndex: $selectedIndex)
       } else if node.contentType == .menu, let children = node.children {
         MenuListView(
@@ -735,14 +735,17 @@ struct MusicLibraryView: View {
                   Text(index == selectedIndex ? "[ \(name) ]" : "  \(name)")
                     .font(
                       .system(
-                        size: 15, weight: index == selectedIndex ? .bold : .medium, design: .monospaced)
+                        size: 15, weight: index == selectedIndex ? .bold : .medium,
+                        design: .monospaced)
                     )
                     .foregroundColor(index == selectedIndex ? .white : .black)
                   Spacer()
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
-                .background(index == selectedIndex ? SettingsStore.shared.theme.accentColor : Color.clear)
+                .background(
+                  index == selectedIndex ? SettingsStore.shared.theme.accentColor : Color.clear
+                )
                 .id(index)
               }
             }
@@ -759,7 +762,7 @@ struct MusicLibraryView: View {
       }
     }
     .onAppear {
-      print("DEBUG: playlistsList appeared. Playlists count: \(playlists.count)")
+      print("DEBUG: playlistsList appeared. Playlists count: \(musicManager.playlists.count)")
     }
   }
 
@@ -767,7 +770,12 @@ struct MusicLibraryView: View {
     VStack(spacing: 0) {
       let songs = musicManager.allSongs
 
-      if songs.isEmpty {
+      if musicManager.isLoading {
+        Text("[ LOADING... ]")
+          .font(.system(size: 14, design: .monospaced))
+          .foregroundColor(.gray)
+          .padding(.top, 40)
+      } else if songs.isEmpty {
         Text("[ NO SONGS FOUND ]")
           .font(.system(size: 14, design: .monospaced))
           .foregroundColor(.gray)
@@ -783,14 +791,17 @@ struct MusicLibraryView: View {
                   Text(index == selectedIndex ? "[ \(title) ]" : "  \(title)")
                     .font(
                       .system(
-                        size: 15, weight: index == selectedIndex ? .bold : .medium, design: .monospaced)
+                        size: 15, weight: index == selectedIndex ? .bold : .medium,
+                        design: .monospaced)
                     )
                     .foregroundColor(index == selectedIndex ? .white : .black)
                   Spacer()
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
-                .background(index == selectedIndex ? SettingsStore.shared.theme.accentColor : Color.clear)
+                .background(
+                  index == selectedIndex ? SettingsStore.shared.theme.accentColor : Color.clear
+                )
                 .id(index)
               }
             }
@@ -807,7 +818,7 @@ struct MusicLibraryView: View {
       }
     }
     .onAppear {
-      print("DEBUG: songsList appeared. Songs count: \(songs.count)")
+      print("DEBUG: songsList appeared. Songs count: \(musicManager.allSongs.count)")
     }
   }
 }

@@ -163,8 +163,22 @@ struct DeviceShellView: View {
     if payload == "music-playlists" {
       let playlists = musicManager.playlists
       if selectedIndex < playlists.count {
-        musicManager.playPlaylist(playlists[selectedIndex])
-        navigateToNowPlaying()
+        let selectedPlaylist = playlists[selectedIndex]
+        // Instead of playing immediately, show the songs
+        musicManager.openPlaylist(selectedPlaylist)
+
+        let songsNode = MenuNode(
+          id: "music-songs",
+          title: selectedPlaylist.name,  // Use playlist name as title
+          contentType: .media,
+          payloadID: "music-songs"
+        )
+
+        withAnimation(.easeOut(duration: 0.2)) {
+          navigationStack.append(songsNode)
+          selectedIndex = 0
+          physics.reset(to: 0)
+        }
       }
       return
     }

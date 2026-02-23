@@ -8,9 +8,12 @@
 import Combine
 import Foundation
 import UIKit
+import os
 
 class MusicLibraryManager: ObservableObject {
   static let shared = MusicLibraryManager()
+  private let logger = Logger(
+    subsystem: "com.anuragsingh.portfoliopod", category: "MusicLibraryManager")
 
   // Auth status (simplified for iTunes - no auth needed)
   enum AuthStatus {
@@ -53,14 +56,14 @@ class MusicLibraryManager: ObservableObject {
   private lazy var itunesService: iTunesService = iTunesService.shared
 
   private init() {
-    print("MusicLibraryManager: Initialized with iTunes Search API")
+    logger.info("Initialized with iTunes Search API")
     loadCuratedContent()
   }
 
   // MARK: - Load Curated Content
 
   func loadCuratedContent() {
-    print("MusicLibraryManager: Loading curated content...")
+    logger.info("Loading curated content...")
     isLoading = true
 
     Task {
@@ -80,10 +83,10 @@ class MusicLibraryManager: ObservableObject {
             self.allSongs = combined
           }
           self.isLoading = false
-          print("MusicLibraryManager: Loaded \(self.playlists.count) playlists, \(self.allSongs.count) songs")
+          logger.info("Loaded \(self.playlists.count) playlists, \(self.allSongs.count) songs")
         }
       } catch {
-        print("MusicLibraryManager: Error loading content: \(error)")
+        logger.error("Error loading content: \(error.localizedDescription)")
         await MainActor.run {
           self.isLoading = false
         }
@@ -150,10 +153,10 @@ class MusicLibraryManager: ObservableObject {
           self.allSongs = tracks.asSimpleSongs
           self.isInSearchMode = true
           self.isLoading = false
-          print("MusicLibraryManager: Search returned \(self.allSongs.count) results")
+          logger.info("Search returned \(self.allSongs.count) results")
         }
       } catch {
-        print("MusicLibraryManager: Search error: \(error)")
+        logger.error("Search error: \(error.localizedDescription)")
         await MainActor.run {
           self.isLoading = false
         }
@@ -163,16 +166,21 @@ class MusicLibraryManager: ObservableObject {
 
   // MARK: - Playback
 
+  func openPlaylist(_ playlist: SimplePlaylist) {
+    logger.info("Opening playlist: \(playlist.name)")
+    allSongs = playlist.songs
+  }
+
   func playPlaylist(_ playlist: SimplePlaylist) {
     guard let firstSong = playlist.songs.first else {
-      print("MusicLibraryManager: Playlist is empty")
+      logger.warning("Playlist is empty")
       return
     }
     playSong(firstSong)
   }
 
   func playSong(_ song: SimpleSong) {
-    print("MusicLibraryManager: Playing '\(song.title)' by \(song.artist)")
+    logger.info("Playing '\(song.title)' by \(song.artist)")
     audioPlayer.play(song: song)
   }
 
@@ -192,7 +200,7 @@ class MusicLibraryManager: ObservableObject {
 
   func checkPermissions() {
     // No permissions needed for iTunes API
-    print("MusicLibraryManager: No permissions required for iTunes API")
+    logger.info("No permissions required for iTunes API")
     permissionStatus = .authorized
   }
 
@@ -209,4 +217,3 @@ class MusicLibraryManager: ObservableObject {
     }
   }
 }
-

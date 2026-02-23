@@ -52,6 +52,19 @@ class StickerStore: ObservableObject {
     stickers.append(sticker)
   }
 
+  func updateStickerPosition(id: UUID, x: CGFloat, y: CGFloat) {
+    if let index = stickers.firstIndex(where: { $0.id == id }) {
+      stickers[index].positionX = x
+      stickers[index].positionY = y
+    }
+  }
+
+  func removeSticker(id: UUID) {
+    withAnimation(.easeOut(duration: 0.3)) {
+      stickers.removeAll { $0.id == id }
+    }
+  }
+
   func clearStickers() {
     stickers.removeAll()
   }
@@ -79,6 +92,21 @@ struct StickerLayerView: View {
               )
               // Retro tech style: Subtle multiply-ish blend and realistic shadow
               .shadow(color: .black.opacity(0.4), radius: 3, x: 2, y: 2)
+              // Interactivity
+              .gesture(
+                DragGesture(coordinateSpace: .named("stickerLayer"))
+                  .onChanged { value in
+                    // Calculate relative position (0-1)
+                    let newX = min(max(value.location.x / geometry.size.width, 0), 1)
+                    let newY = min(max(value.location.y / geometry.size.height, 0), 1)
+                    store.updateStickerPosition(id: sticker.id, x: newX, y: newY)
+                  }
+              )
+              .onLongPressGesture(minimumDuration: 0.5) {
+                let generator = UIImpactFeedbackGenerator(style: .medium)
+                generator.impactOccurred()
+                store.removeSticker(id: sticker.id)
+              }
               .overlay(
                 // Noise / Worn texture overlay
                 ZStack {
@@ -105,6 +133,7 @@ struct StickerLayerView: View {
           }
         }
       }
+      .coordinateSpace(name: "stickerLayer")
     }
   }
 }
